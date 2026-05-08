@@ -55,7 +55,10 @@ class ProviderConfigService {
           for (final entry in providerEntries.entries) {
             if (entry.value is Map) {
               final normalized = Map<String, dynamic>.from(entry.value as Map);
-              normalized['model'] = _extractPrimaryModel(normalized['models']);
+              final model = _extractPrimaryModel(normalized['models']);
+              if (model != null) {
+                normalized['model'] = model;
+              }
               providers[entry.key] = normalized;
             }
           }
