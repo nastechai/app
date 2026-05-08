@@ -53,17 +53,18 @@ class ProviderConfigService {
     }
   }
 
-  /// Save a provider's API key and set its model as the active model.
+  /// Save a provider's API key/base URL and set its model as the active model.
   /// Tries a Node.js one-liner in proot first, then falls back to a direct
   /// file write via NativeBridge.writeRootfsFile if proot/DNS is unavailable.
   static Future<void> saveProviderConfig({
     required AiProvider provider,
     required String apiKey,
+    required String baseUrl,
     required String model,
   }) async {
     final providerIdJson = jsonEncode(provider.id);
     final apiKeyJson = jsonEncode(apiKey);
-    final baseUrlJson = jsonEncode(provider.baseUrl);
+    final baseUrlJson = jsonEncode(baseUrl);
     final modelJson = jsonEncode(model);
 
     // Build the provider object with the model as an object containing `id`,
@@ -100,7 +101,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       await _saveConfigDirect(
         providerId: provider.id,
         apiKey: apiKey,
-        baseUrl: provider.baseUrl,
+        baseUrl: baseUrl,
         model: model,
       );
     }
