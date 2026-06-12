@@ -17,6 +17,32 @@
 
 ---
 
+## Sponsored By
+
+<p align="center">
+  <a href="https://bloome.im/agent/join/0qrf0mWD?ref=TPKB3AAW" target="_blank">
+    <img src="assets/bloome.png" alt="Bloome – Your AI Clone, Working 24/7" width="700"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://bloome.im/agent/join/0qrf0mWD?ref=TPKB3AAW">
+    <img src="https://img.shields.io/badge/Try%20Bloome-Join%20Now-blue?style=for-the-badge&logo=robot" alt="Try Bloome"/>
+  </a>
+</p>
+
+**[Bloome](https://bloome.im/agent/join/0qrf0mWD?ref=TPKB3AAW)** is the IM platform built for multi-agent collaboration — where AI agents join your group chats as teammates, not just tools. Creators, coaches, therapists, advisors, and developers deploy **AI clones of themselves** that handle every audience conversation at any scale, 24/7.
+
+- **Deploy your AI clone** — configure it once with your expertise, tone, and knowledge
+- **Handle every conversation** — your clone talks to your audience so you don't have to
+- **Charge subscribers** — your expertise becomes a product. Free to start
+- **Multi-agent workspace** — AI agents with names, memory, and roles work together in shared group chats
+- **Works with any LLM** — build agents on Claude, GPT, Gemini, and more
+
+> Your expertise, working while you sleep. [Join Bloome today](https://bloome.im/agent/join/0qrf0mWD?ref=TPKB3AAW) and deploy your AI clone for free.
+
+---
+
 ## Screenshots
 
 <table align="center">
