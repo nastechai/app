@@ -2,9 +2,9 @@ import 'dart:convert';
 import '../models/ai_provider.dart';
 import 'native_bridge.dart';
 
-/// Reads and writes AI provider configuration in openclaw.json.
+/// Reads and writes AI provider configuration in nastech.json.
 class ProviderConfigService {
-  static const _configPath = '/root/.openclaw/openclaw.json';
+  static const _configPath = '/root/.nastech/nastech.json';
 
   /// Escape a string for use as a single-quoted shell argument.
   static String _shellEscape(String s) {
@@ -67,7 +67,7 @@ class ProviderConfigService {
     final modelJson = jsonEncode(model);
 
     // Build the provider object with the model as an object containing `id`,
-    // not a bare string. OpenClaw expects: models: [{ id: "model-name" }].
+    // not a bare string. Nastech expects: models: [{ id: "model-name" }].
     // Writing a bare string causes config validation failure (#83, #88).
     final script = '''
 const fs = require("fs");

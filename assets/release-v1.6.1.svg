@@ -49,7 +49,7 @@
   </g>
 
   <!-- Title -->
-  <text x="310" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#FFFFFF">OpenClaw</text>
+  <text x="310" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#FFFFFF">Nastech</text>
   <text x="310" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#8899AA" letter-spacing="4">AI GATEWAY FOR ANDROID</text>
 
   <!-- Version badge -->
@@ -96,6 +96,6 @@
 
   <!-- Footer -->
   <line x1="50" y1="575" x2="1150" y2="575" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.1"/>
-  <text x="60" y="605" font-family="system-ui, sans-serif" font-size="13" fill="#556677">github.com/mithun50/openclaw-termux</text>
+  <text x="60" y="605" font-family="system-ui, sans-serif" font-size="13" fill="#556677">github.com/mithun50/nastech-termux</text>
   <text x="1140" y="605" font-family="system-ui, sans-serif" font-size="13" fill="#556677" text-anchor="end">by Mithun Gowda B  |  NextGenX  |  MIT License</text>
 </svg>

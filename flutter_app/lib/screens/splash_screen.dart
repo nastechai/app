@@ -86,12 +86,12 @@ class _SplashScreenState extends State<SplashScreen>
             if (!await downloadDir.exists()) {
               await downloadDir.create(recursive: true);
             }
-            final snapshotPath = '$sdcard/Download/openclaw-snapshot-$oldVersion.json';
-            final openclawJson = await NativeBridge.readRootfsFile('root/.openclaw/openclaw.json');
+            final snapshotPath = '$sdcard/Download/nastech-snapshot-$oldVersion.json';
+            final nastechJson = await NativeBridge.readRootfsFile('root/.nastech/nastech.json');
             final snapshot = {
               'version': oldVersion,
               'timestamp': DateTime.now().toIso8601String(),
-              'openclawConfig': openclawJson,
+              'nastechConfig': nastechJson,
               'dashboardUrl': prefs.dashboardUrl,
               'autoStart': prefs.autoStartGateway,
               'nodeEnabled': prefs.nodeEnabled,
@@ -123,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
           final rootfsOk = status['rootfsExists'] == true;
           final bashOk = status['binBashExists'] == true;
           final nodeOk = status['nodeInstalled'] == true;
-          final openclawOk = status['openclawInstalled'] == true;
+          final nastechOk = status['nastechInstalled'] == true;
           final bypassOk = status['bypassInstalled'] == true;
 
           // Core rootfs must exist — can't repair without it
@@ -148,18 +148,18 @@ class _SplashScreenState extends State<SplashScreen>
               } catch (_) {}
             }
 
-            // Reinstall openclaw if package.json is missing (#97)
-            if (!openclawOk && nodeOk) {
-              setState(() => _status = 'Reinstalling OpenClaw...');
+            // Reinstall nastech if package.json is missing (#97)
+            if (!nastechOk && nodeOk) {
+              setState(() => _status = 'Reinstalling Nastech...');
               try {
-                const wrapper = '/root/.openclaw/node-wrapper.js';
+                const wrapper = '/root/.nastech/node-wrapper.js';
                 const nodeRun = 'node $wrapper';
                 const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
                 await NativeBridge.runInProot(
-                  '$nodeRun $npmCli install -g openclaw',
+                  '$nodeRun $npmCli install -g nastech',
                   timeout: 1800,
                 );
-                await NativeBridge.createBinWrappers('openclaw');
+                await NativeBridge.createBinWrappers('nastech');
               } catch (_) {}
             }
 
@@ -203,7 +203,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'OpenClaw',
+                'Nastech',
                 style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

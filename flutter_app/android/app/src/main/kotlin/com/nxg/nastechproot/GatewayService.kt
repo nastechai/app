@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -21,7 +21,7 @@ import java.net.Socket
 
 class GatewayService : Service() {
     companion object {
-        const val CHANNEL_ID = "openclaw_gateway"
+        const val CHANNEL_ID = "nastech_gateway"
         const val NOTIFICATION_ID = 1
         var isRunning = false
             private set
@@ -198,7 +198,7 @@ class GatewayService : Service() {
                 synchronized(lock) {
                     if (stopping) return@Thread
                     processStartTime = System.currentTimeMillis()
-                    gatewayProcess = pm.startProotProcess("openclaw gateway --verbose")
+                    gatewayProcess = pm.startProotProcess("nastech gateway --verbose")
                 }
                 updateNotificationRunning()
                 emitLog("[INFO] Gateway process spawned")
@@ -291,7 +291,7 @@ class GatewayService : Service() {
         }
         emitLog("Gateway stopped by user")
         // Gracefully terminate proot via SIGTERM first, allowing its --kill-on-exit
-        // handler to kill child processes (node.js / openclaw daemon) before proot
+        // handler to kill child processes (node.js / nastech daemon) before proot
         // exits.  destroyForcibly() (SIGKILL) bypasses proot's exit handler, which
         // can leave the gateway daemon alive even after proot is killed.
         procToStop?.let { proc ->
@@ -385,7 +385,7 @@ class GatewayService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "OpenClaw::GatewayWakeLock"
+            "Nastech::GatewayWakeLock"
         )
         wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
     }
@@ -401,10 +401,10 @@ class GatewayService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "OpenClaw Gateway",
+                "Nastech Gateway",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Keeps the OpenClaw gateway running in the background"
+                description = "Keeps the Nastech gateway running in the background"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -425,7 +425,7 @@ class GatewayService : Service() {
             Notification.Builder(this)
         }
 
-        builder.setContentTitle("OpenClaw Gateway")
+        builder.setContentTitle("Nastech Gateway")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(pendingIntent)

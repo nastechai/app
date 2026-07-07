@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -145,14 +145,14 @@ class ScreenCaptureService : Service() {
     private fun buildNotification(): Notification {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("OpenClaw Node")
+                .setContentTitle("Nastech Node")
                 .setContentText("Recording screen...")
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .build()
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("OpenClaw Node")
+                .setContentTitle("Nastech Node")
                 .setContentText("Recording screen...")
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .build()
@@ -161,7 +161,7 @@ class ScreenCaptureService : Service() {
 
     companion object {
         const val NOTIFICATION_ID = 6
-        const val CHANNEL_ID = "openclaw_screen_capture"
+        const val CHANNEL_ID = "nastech_screen_capture"
 
         @Volatile
         var resultPath: String? = null

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Metadata for an AI model provider that can be configured
-/// to power the OpenClaw gateway.
+/// to power the Nastech gateway.
 class AiProvider {
   final String id;
   final String name;

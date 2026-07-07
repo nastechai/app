@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,7 +13,7 @@ import android.os.PowerManager
 
 class NodeForegroundService : Service() {
     companion object {
-        const val CHANNEL_ID = "openclaw_node"
+        const val CHANNEL_ID = "nastech_node"
         const val NOTIFICATION_ID = 3
         var isRunning = false
             private set
@@ -79,7 +79,7 @@ class NodeForegroundService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "OpenClaw::NodeWakeLock"
+            "Nastech::NodeWakeLock"
         )
         wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
     }
@@ -95,10 +95,10 @@ class NodeForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "OpenClawX Node",
+                "NastechX Node",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Keeps the OpenClawX Node connected in the background"
+                description = "Keeps the NastechX Node connected in the background"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -119,7 +119,7 @@ class NodeForegroundService : Service() {
             Notification.Builder(this)
         }
 
-        builder.setContentTitle("OpenClawX Node")
+        builder.setContentTitle("NastechX Node")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentIntent(pendingIntent)

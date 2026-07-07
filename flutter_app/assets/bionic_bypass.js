@@ -1,4 +1,4 @@
-// OpenClaw Bionic Bypass - Auto-generated
+// Nastech Bionic Bypass - Auto-generated
 const os = require('os');
 const originalNetworkInterfaces = os.networkInterfaces;
 

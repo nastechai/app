@@ -1,5 +1,5 @@
-name: openclaw
-description: OpenClaw AI Gateway for Android - standalone, no Termux required.
+name: nastech
+description: Nastech AI Agent for Android - standalone, no Termux required.
 publish_to: 'none'
 version: 1.8.7+18
 

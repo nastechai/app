@@ -1,18 +1,18 @@
 class AppConstants {
-  static const String appName = 'OpenClaw';
+  static const String appName = 'Nastech';
   static const String version = '1.8.7';
-  static const String packageName = 'com.nxg.openclawproot';
+  static const String packageName = 'com.nxg.nastechproot';
 
   /// Matches ANSI escape sequences (e.g. color codes in terminal output).
   static final ansiEscape = RegExp(r'\x1b\[[0-9;]*[a-zA-Z]');
 
   static const String authorName = 'Mithun Gowda B';
   static const String authorEmail = 'mithungowda.b7411@gmail.com';
-  static const String githubUrl = 'https://github.com/mithun50/openclaw-termux';
+  static const String githubUrl = 'https://github.com/mithun50/nastech-termux';
   static const String license = 'MIT';
 
   static const String githubApiLatestRelease =
-      'https://api.github.com/repos/mithun50/openclaw-termux/releases/latest';
+      'https://api.github.com/repos/mithun50/nastech-termux/releases/latest';
 
   // NextGenX
   static const String orgName = 'NextGenX';
@@ -60,8 +60,8 @@ class AppConstants {
   static const String nodeRole = 'node';
   static const int pairingTimeoutMs = 300000;
 
-  static const String channelName = 'com.nxg.openclawproot/native';
-  static const String eventChannelName = 'com.nxg.openclawproot/gateway_logs';
+  static const String channelName = 'com.nxg.nastechproot/native';
+  static const String eventChannelName = 'com.nxg.nastechproot/gateway_logs';
 
   static String getRootfsUrl(String arch) {
     switch (arch) {

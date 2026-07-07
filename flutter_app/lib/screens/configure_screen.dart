@@ -10,7 +10,7 @@ import '../services/screenshot_service.dart';
 import '../services/terminal_service.dart';
 import '../widgets/terminal_toolbar.dart';
 
-/// Runs `openclaw configure` in a terminal so the user can manage
+/// Runs `nastech configure` in a terminal so the user can manage
 /// gateway settings. Accessible from the dashboard.
 class ConfigureScreen extends StatefulWidget {
   const ConfigureScreen({super.key});
@@ -89,10 +89,10 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       configureArgs.removeLast(); // remove '/bin/bash'
       configureArgs.addAll([
         '/bin/bash', '-lc',
-        'echo "=== OpenClaw Configure ===" && '
+        'echo "=== Nastech Configure ===" && '
         'echo "Manage your gateway settings." && '
         'echo "" && '
-        'openclaw configure; '
+        'nastech configure; '
         'echo "" && echo "Configuration complete! You can close this screen."',
       ]);
 
@@ -265,7 +265,7 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OpenClaw Configure'),
+        title: const Text('Nastech Configure'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),

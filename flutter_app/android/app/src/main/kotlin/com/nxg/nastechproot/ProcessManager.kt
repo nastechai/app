@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.os.Build
 import android.os.Environment
@@ -198,7 +198,7 @@ class ProcessManager(
 
     // ================================================================
     // GATEWAY MODE — matches proot-distro's command_login()
-    // Used for: running openclaw gateway (long-lived Node.js process).
+    // Used for: running nastech gateway (long-lived Node.js process).
     // Full featured: --sysvipc, full uname struct, more guest env vars.
     // ================================================================
     fun buildGatewayCommand(command: String): List<String> {
@@ -220,7 +220,7 @@ class ProcessManager(
             "\\$FAKE_KERNEL_VERSION\\$machine\\localdomain\\-1\\"
         flags.add(3, "--kernel-release=$kernelRelease")
 
-        val nodeOptions = "--require /root/.openclaw/bionic-bypass.js"
+        val nodeOptions = "--require /root/.nastech/bionic-bypass.js"
 
         // Guest environment via env -i (matching proot-distro command_login)
         flags.addAll(listOf(

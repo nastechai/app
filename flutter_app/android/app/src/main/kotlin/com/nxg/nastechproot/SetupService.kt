@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,7 +13,7 @@ import android.os.PowerManager
 
 class SetupService : Service() {
     companion object {
-        const val CHANNEL_ID = "openclaw_setup"
+        const val CHANNEL_ID = "nastech_setup"
         const val NOTIFICATION_ID = 4
         var isRunning = false
             private set
@@ -70,7 +70,7 @@ class SetupService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "OpenClaw::SetupWakeLock"
+            "Nastech::SetupWakeLock"
         )
         wakeLock?.acquire(60 * 60 * 1000L) // 1 hour max
     }
@@ -86,10 +86,10 @@ class SetupService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "OpenClaw Setup",
+                "Nastech Setup",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows progress during OpenClaw environment setup"
+                description = "Shows progress during Nastech environment setup"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -114,7 +114,7 @@ class SetupService : Service() {
             Notification.Builder(this)
         }
 
-        builder.setContentTitle("OpenClaw Setup")
+        builder.setContentTitle("Nastech Setup")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentIntent(pendingIntent)

@@ -169,7 +169,7 @@ class BootstrapService {
         message: 'Installing base packages...',
       ));
       // ca-certificates: HTTPS for npm/git
-      // git: openclaw has git deps (@whiskeysockets/libsignal-node)
+      // git: nastech has git deps (@whiskeysockets/libsignal-node)
       // python3, make, g++: node-gyp needs these to compile native addons
       //   (npm's bundled node-gyp runs as a JS module, not a spawned process,
       //    so proot-compat.js spawn mock can't intercept it)
@@ -239,7 +239,7 @@ class BootstrapService {
       ));
       // node-wrapper.js patches broken proot syscalls before loading npm.
       // /usr/local/bin is on PATH, so node finds the tarball's npm.
-      const wrapper = '/root/.openclaw/node-wrapper.js';
+      const wrapper = '/root/.nastech/node-wrapper.js';
       const nodeRun = 'node $wrapper';
       // npm from nodejs.org tarball is at /usr/local/lib/node_modules/npm
       const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
@@ -252,41 +252,41 @@ class BootstrapService {
         message: 'Node.js installed',
       ));
 
-      // Step 4: Install OpenClaw (80-98%)
-      _updateSetupNotification('Installing OpenClaw...', progress: 82);
+      // Step 4: Install Nastech (80-98%)
+      _updateSetupNotification('Installing Nastech...', progress: 82);
       onProgress(const SetupState(
-        step: SetupStep.installingOpenClaw,
+        step: SetupStep.installingNastech,
         progress: 0.0,
-        message: 'Installing OpenClaw (this may take a few minutes)...',
+        message: 'Installing Nastech (this may take a few minutes)...',
       ));
-      // Install openclaw — fork/exec works now with our Termux-matching proot.
+      // Install nastech — fork/exec works now with our Termux-matching proot.
       await NativeBridge.runInProot(
-        '$nodeRun $npmCli install -g openclaw',
+        '$nodeRun $npmCli install -g nastech',
         timeout: 1800,
       );
 
       _updateSetupNotification('Creating bin wrappers...', progress: 92);
       onProgress(const SetupState(
-        step: SetupStep.installingOpenClaw,
+        step: SetupStep.installingNastech,
         progress: 0.7,
         message: 'Creating bin wrappers...',
       ));
       // npm global install creates symlinks for bin entries, but symlinks
       // can fail silently in proot. Create shell wrappers from Java side
       // (reads package.json directly from rootfs filesystem — no escaping).
-      await NativeBridge.createBinWrappers('openclaw');
+      await NativeBridge.createBinWrappers('nastech');
 
-      _updateSetupNotification('Verifying OpenClaw...', progress: 96);
+      _updateSetupNotification('Verifying Nastech...', progress: 96);
       onProgress(const SetupState(
-        step: SetupStep.installingOpenClaw,
+        step: SetupStep.installingNastech,
         progress: 0.9,
-        message: 'Verifying OpenClaw...',
+        message: 'Verifying Nastech...',
       ));
-      await NativeBridge.runInProot('openclaw --version || echo openclaw_installed');
+      await NativeBridge.runInProot('nastech --version || echo nastech_installed');
       onProgress(const SetupState(
-        step: SetupStep.installingOpenClaw,
+        step: SetupStep.installingNastech,
         progress: 1.0,
-        message: 'OpenClaw installed',
+        message: 'Nastech installed',
       ));
 
       // Step 5: Bionic Bypass already installed (before node verification)

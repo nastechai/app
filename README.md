@@ -1,19 +1,19 @@
-# OpenClaw
+# Nastech
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/openclaw-termux/releases/latest)
-[![Build Flutter APK & AAB](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml)
-[![npm version](https://img.shields.io/npm/v/openclaw-termux?color=blue&label=npm)](https://www.npmjs.com/package/openclaw-termux)
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/nastech-termux/releases/latest)
+[![Build Flutter APK & AAB](https://github.com/mithun50/nastech-termux/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/mithun50/nastech-termux/actions/workflows/flutter-build.yml)
+[![npm version](https://img.shields.io/npm/v/nastech-termux?color=blue&label=npm)](https://www.npmjs.com/package/nastech-termux)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-22-green?logo=node.js)](https://nodejs.org/)
 [![Android](https://img.shields.io/badge/Android-10%2B-brightgreen?logo=android)](https://www.android.com/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.24-02569B?logo=flutter)](https://flutter.dev/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mithun50/openclaw-termux/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mithun50/nastech-termux/pulls)
 
 <p align="center">
-  <img src="assets/ic_launcher.png" alt="OpenClaw App Mockup" width="700"/>
+  <img src="assets/ic_launcher.png" alt="Nastech App Mockup" width="700"/>
 </p>
 
-> Run **OpenClaw AI Gateway** on Android — standalone Flutter app with built-in terminal, web dashboard, optional dev tools, and one-tap setup. Also available as a Termux CLI package.
+> Run **Nastech AI Gateway** on Android — standalone Flutter app with built-in terminal, web dashboard, optional dev tools, and one-tap setup. Also available as a Termux CLI package.
 
 ---
 
@@ -60,17 +60,17 @@
 
 ---
 
-## What is OpenClaw?
+## What is Nastech?
 
-OpenClaw brings the [OpenClaw](https://github.com/openclaw/openclaw) AI gateway to Android. It sets up a full Ubuntu environment via proot, installs Node.js and OpenClaw, and provides a native Flutter UI to manage everything — no root required.
+Nastech brings the [Nastech](https://github.com/nastech/nastech) AI gateway to Android. It sets up a full Ubuntu environment via proot, installs Node.js and Nastech, and provides a native Flutter UI to manage everything — no root required.
 
 ### Two Ways to Use
 
 | | **Flutter App** (Standalone) | **Termux CLI** |
 |---|---|---|
-| Install | Build APK or download release | `npm install -g openclaw-termux` |
-| Setup | Tap "Begin Setup" | `openclawx setup` |
-| Gateway | Tap "Start Gateway" | `openclawx start` |
+| Install | Build APK or download release | `npm install -g nastech-termux` |
+| Setup | Tap "Begin Setup" | `nastechx setup` |
+| Gateway | Tap "Start Gateway" | `nastechx start` |
 | Terminal | Built-in terminal emulator | Termux shell |
 | Dashboard | Built-in WebView | Browser at `localhost:18789` |
 
@@ -79,12 +79,12 @@ OpenClaw brings the [OpenClaw](https://github.com/openclaw/openclaw) AI gateway 
 ## Features
 
 ### Flutter App
-- **One-Tap Setup** — Downloads Ubuntu rootfs, Node.js 22, and OpenClaw automatically
+- **One-Tap Setup** — Downloads Ubuntu rootfs, Node.js 22, and Nastech automatically
 - **Built-in Terminal** — Full terminal emulator with extra keys toolbar, copy/paste, clickable URLs
 - **Gateway Controls** — Start/stop gateway with status indicator and health checks
 - **AI Providers** — Configure API keys and select models for 7 providers (Anthropic, OpenAI, Google Gemini, OpenRouter, NVIDIA NIM, DeepSeek, xAI)
 - **SSH Remote Access** — Start/stop SSH server, set root password, view connection info with copyable commands
-- **Configure Menu** — Run `openclaw configure` in a built-in terminal to manage gateway settings
+- **Configure Menu** — Run `nastech configure` in a built-in terminal to manage gateway settings
 - **Node Device Capabilities** — 7 capabilities (15 commands) exposed to AI via WebSocket node protocol
 - **Token URL Display** — Captures auth token from onboarding, shows it with a copy button
 - **Web Dashboard** — Embedded WebView loads the dashboard with authentication token
@@ -124,19 +124,19 @@ The Flutter app connects to the gateway as a **node**, exposing Android hardware
 | **Sensor** | `sensor.read`, `sensor.list` | Body Sensors |
 | **Haptic** | `haptic.vibrate` | None |
 
-The gateway's `openclaw.json` is automatically patched before startup to clear `denyCommands` and set `allowCommands` for all 15 commands.
+The gateway's `nastech.json` is automatically patched before startup to clear `denyCommands` and set `allowCommands` for all 15 commands.
 
 ### Termux CLI
-- **One-Command Setup** — Installs proot-distro, Ubuntu, Node.js 22, and OpenClaw
+- **One-Command Setup** — Installs proot-distro, Ubuntu, Node.js 22, and Nastech
 - **Bionic Bypass** — Fixes `os.networkInterfaces()` crash on Android's Bionic libc
 - **Smart Loading** — Shows spinner until the gateway is ready
-- **Pass-through Commands** — Run any OpenClaw command via `openclawx`
+- **Pass-through Commands** — Run any Nastech command via `nastechx`
 
 ---
 
 ## Important Warnings
 
-> **Storage Permission** — This app does **NOT** need full storage access to function. If prompted, **deny** the storage permission unless you specifically need proot to access `/sdcard`. Granting `MANAGE_EXTERNAL_STORAGE` allows the proot environment to read and modify **all files** on your device including photos, downloads, and documents. Previous versions requested this permission automatically on launch, which could lead to unintended data loss (see [#67](https://github.com/mithun50/openclaw-termux/issues/67), [#63](https://github.com/mithun50/openclaw-termux/issues/63)). This has been fixed — storage access is now opt-in from Settings only.
+> **Storage Permission** — This app does **NOT** need full storage access to function. If prompted, **deny** the storage permission unless you specifically need proot to access `/sdcard`. Granting `MANAGE_EXTERNAL_STORAGE` allows the proot environment to read and modify **all files** on your device including photos, downloads, and documents. Previous versions requested this permission automatically on launch, which could lead to unintended data loss (see [#67](https://github.com/mithun50/nastech-termux/issues/67), [#63](https://github.com/mithun50/nastech-termux/issues/63)). This has been fixed — storage access is now opt-in from Settings only.
 
 > **Battery Optimization** — Disable battery optimization for the app in Android Settings to prevent Android from killing the gateway process in the background. Without this, the gateway may crash silently after a few minutes.
 
@@ -148,7 +148,7 @@ The gateway's `openclaw.json` is automatically patched before startup to clear `
 
 ### Flutter App (Recommended)
 
-1. Download the latest APK from [Releases](https://github.com/mithun50/openclaw-termux/releases)
+1. Download the latest APK from [Releases](https://github.com/mithun50/nastech-termux/releases)
 2. Install the APK on your Android device
 3. Open the app and tap **Begin Setup**
 4. After setup completes, optionally install **Go** or **Homebrew** from the package cards
@@ -158,8 +158,8 @@ The gateway's `openclaw.json` is automatically patched before startup to clear `
 Or build from source:
 
 ```bash
-git clone https://github.com/mithun50/openclaw-termux.git
-cd openclaw-termux/flutter_app
+git clone https://github.com/mithun50/nastech-termux.git
+cd nastech-termux/flutter_app
 flutter build apk --release
 ```
 
@@ -168,14 +168,14 @@ flutter build apk --release
 #### One-liner (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mithun50/openclaw-termux/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mithun50/nastech-termux/main/install.sh | bash
 ```
 
 #### Or via npm
 
 ```bash
-npm install -g openclaw-termux
-openclawx setup
+npm install -g nastech-termux
+nastechx setup
 ```
 
 ---
@@ -185,7 +185,7 @@ openclawx setup
 | Requirement | Details |
 |-------------|---------|
 | **Android** | 10 or higher (API 29) |
-| **Storage** | ~500MB for Ubuntu + Node.js + OpenClaw |
+| **Storage** | ~500MB for Ubuntu + Node.js + Nastech |
 | **Architectures** | arm64-v8a, armeabi-v7a, x86_64 |
 | **Termux** (CLI only) | From [F-Droid](https://f-droid.org/packages/com.termux/) (NOT Play Store) |
 
@@ -194,34 +194,34 @@ openclawx setup
 ## CLI Usage
 
 ```bash
-# First-time setup (installs proot + Ubuntu + Node.js + OpenClaw)
-openclawx setup
+# First-time setup (installs proot + Ubuntu + Node.js + Nastech)
+nastechx setup
 
 # Check installation status
-openclawx status
+nastechx status
 
-# Start OpenClaw gateway
-openclawx start
+# Start Nastech gateway
+nastechx start
 
 # Run onboarding to configure API keys
-openclawx onboarding
+nastechx onboarding
 
 # Enter Ubuntu shell
-openclawx shell
+nastechx shell
 
-# Any OpenClaw command works directly
-openclawx doctor
-openclawx gateway --verbose
+# Any Nastech command works directly
+nastechx doctor
+nastechx gateway --verbose
 ```
 
 ### Optional X/Twitter Workflows With TweetClaw
 
-OpenClaw-Termux can install regular OpenClaw plugins inside the Android Ubuntu runtime. For X/Twitter automation, install TweetClaw after setup:
+Nastech-Termux can install regular Nastech plugins inside the Android Ubuntu runtime. For X/Twitter automation, install TweetClaw after setup:
 
 ```bash
-openclawx plugins install @xquik/tweetclaw
-openclawx plugins inspect tweetclaw --runtime
-openclawx skills info tweetclaw
+nastechx plugins install @xquik/tweetclaw
+nastechx plugins inspect tweetclaw --runtime
+nastechx skills info tweetclaw
 ```
 
 Use it for scrape tweets, search tweets, search tweet replies, follower export, user lookup, media workflows, direct messages, monitors, webhooks, giveaway draws, and reviewed post or reply workflows. See [TweetClaw Mobile X/Twitter Workflows](docs/tweetclaw-mobile-workflows.md) for Android credential handling, `tools.alsoAllow`, approval boundaries, and battery optimization notes.
@@ -254,7 +254,7 @@ Use it for scrape tweets, search tweets, search tweet replies, follower export, 
 │  ┌─────────────────┴──────────────────────────┐   │
 │  │   Node.js 22 + Bionic Bypass               │   │
 │  │   ┌─────────────────────────────────────┐  │   │
-│  │   │  OpenClaw AI Gateway                │  │   │
+│  │   │  Nastech AI Gateway                │  │   │
 │  │   │  http://localhost:18789             │  │   │
 │  │   │  ← Node WS: 15 device commands      │  │   │
 │  │   └─────────────────────────────────────┘  │   │
@@ -286,8 +286,8 @@ flutter_app/lib/
 │   ├── onboarding_screen.dart      # API key configuration terminal
 │   ├── dashboard_screen.dart       # Main dashboard with quick actions
 │   ├── terminal_screen.dart        # Full terminal emulator
-│   ├── configure_screen.dart       # openclaw configure terminal
-│   ├── web_dashboard_screen.dart   # WebView for OpenClaw dashboard
+│   ├── configure_screen.dart       # nastech configure terminal
+│   ├── web_dashboard_screen.dart   # WebView for Nastech dashboard
 │   ├── providers_screen.dart       # AI provider list
 │   ├── provider_detail_screen.dart # API key + model configuration
 │   ├── ssh_screen.dart             # SSH server management
@@ -330,7 +330,7 @@ flutter_app/lib/
 
 ### Onboarding
 
-When running onboarding (in-app or via `openclawx onboarding`):
+When running onboarding (in-app or via `nastechx onboarding`):
 
 - **Binding**: Select `Loopback (127.0.0.1)` for non-rooted devices
 - **API Keys**: Add your Gemini/OpenAI/Claude keys
@@ -364,21 +364,21 @@ The Flutter app automatically loads the dashboard with your auth token via the b
 
 ### Files deleted or missing after using the app
 
-Versions before v1.8.4 automatically requested full storage access (`MANAGE_EXTERNAL_STORAGE`) on launch. Combined with symlinks inside the proot rootfs pointing to `/sdcard`, cleanup operations could follow those symlinks and delete real user files. **This has been fixed** — storage permission is no longer auto-requested, symlinks are not followed during deletion, and a path boundary check prevents any deletion outside the app's private directory. If you were affected, see [#67](https://github.com/mithun50/openclaw-termux/issues/67).
+Versions before v1.8.4 automatically requested full storage access (`MANAGE_EXTERNAL_STORAGE`) on launch. Combined with symlinks inside the proot rootfs pointing to `/sdcard`, cleanup operations could follow those symlinks and delete real user files. **This has been fixed** — storage permission is no longer auto-requested, symlinks are not followed during deletion, and a path boundary check prevents any deletion outside the app's private directory. If you were affected, see [#67](https://github.com/mithun50/nastech-termux/issues/67).
 
-To revoke storage permission: Android Settings > Apps > OpenClaw > Permissions > Files and media > Don't allow.
+To revoke storage permission: Android Settings > Apps > Nastech > Permissions > Files and media > Don't allow.
 
 ### Gateway won't start
 
 ```bash
 # Check status
-openclawx status
+nastechx status
 
 # Re-run setup if needed
-openclawx setup
+nastechx setup
 
 # Make sure onboarding is complete
-openclawx onboarding
+nastechx onboarding
 ```
 
 ### "os.networkInterfaces" error
@@ -386,7 +386,7 @@ openclawx onboarding
 Bionic Bypass not configured. Run setup again:
 
 ```bash
-openclawx setup
+nastechx setup
 ```
 
 ### Process killed in background
@@ -420,14 +420,14 @@ proot-distro login ubuntu
 apt update && apt install -y curl
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
-npm install -g openclaw
+npm install -g nastech
 ```
 
 ### 3. Create Bionic Bypass
 
 ```bash
-mkdir -p ~/.openclaw
-cat > ~/.openclaw/bionic-bypass.js << 'EOF'
+mkdir -p ~/.nastech
+cat > ~/.nastech/bionic-bypass.js << 'EOF'
 const os = require('os');
 const originalNetworkInterfaces = os.networkInterfaces;
 os.networkInterfaces = function() {
@@ -454,15 +454,15 @@ EOF
 ### 4. Add to bashrc
 
 ```bash
-echo 'export NODE_OPTIONS="--require ~/.openclaw/bionic-bypass.js"' >> ~/.bashrc
+echo 'export NODE_OPTIONS="--require ~/.nastech/bionic-bypass.js"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 5. Run OpenClaw
+### 5. Run Nastech
 
 ```bash
-openclaw onboarding  # Select "Loopback (127.0.0.1)"
-openclaw gateway --verbose
+nastech onboarding  # Select "Loopback (127.0.0.1)"
+nastech gateway --verbose
 ```
 
 </details>
@@ -501,7 +501,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mithun50/openclaw-termux&type=Date)](https://star-history.com/#mithun50/openclaw-termux&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mithun50/nastech-termux&type=Date)](https://star-history.com/#mithun50/nastech-termux&Date)
 
 
 <p align="center">

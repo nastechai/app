@@ -4,12 +4,12 @@
 
 ### Bug Fixes
 
-- **Config Corruption Fix (#83, #88)** — Provider model entries were written as bare strings instead of objects (`{ id: "model-name" }`), causing OpenClaw config validation to reject the file with "expected object, received string". Fixed both the Node.js script path and the direct file I/O fallback in `ProviderConfigService`. Existing corrupted configs are now auto-repaired on gateway init
-- **Gateway Start Failure (#93, #90)** — The gateway blocked with "set gateway.mode=local (current: unset)". Now `gateway.mode=local` is set automatically in openclaw.json during provider config saves, gateway config writes, bionic bypass installation, and on startup repair
+- **Config Corruption Fix (#83, #88)** — Provider model entries were written as bare strings instead of objects (`{ id: "model-name" }`), causing Nastech config validation to reject the file with "expected object, received string". Fixed both the Node.js script path and the direct file I/O fallback in `ProviderConfigService`. Existing corrupted configs are now auto-repaired on gateway init
+- **Gateway Start Failure (#93, #90)** — The gateway blocked with "set gateway.mode=local (current: unset)". Now `gateway.mode=local` is set automatically in nastech.json during provider config saves, gateway config writes, bionic bypass installation, and on startup repair
 - **Config Auto-Repair on Init (#88)** — Added `_repairConfigFile()` that runs on every `GatewayService.init()` to fix corrupted model entries and missing `gateway.mode`, preventing the crash-restart loop (5 restarts → stopped)
 - **Bionic Bypass Installation Robustness (#94)** — Added retry logic with parent directory creation if the initial `mkdirs()` fails silently on some devices
-- **Pre-seed Config on Setup** — `installBionicBypass()` now creates a default `openclaw.json` with `gateway.mode=local` during initial setup, so the gateway works immediately after installation
-- **Setup Re-prompt After Node Upgrade (#97)** — Expanded auto-repair on splash screen to reinstall Node.js and OpenClaw when their binaries are missing but rootfs is intact, instead of forcing a full re-setup
+- **Pre-seed Config on Setup** — `installBionicBypass()` now creates a default `nastech.json` with `gateway.mode=local` during initial setup, so the gateway works immediately after installation
+- **Setup Re-prompt After Node Upgrade (#97)** — Expanded auto-repair on splash screen to reinstall Node.js and Nastech when their binaries are missing but rootfs is intact, instead of forcing a full re-setup
 
 ### Enhancements
 
@@ -33,7 +33,7 @@
 
 ### Bug Fixes
 
-- **Node Capabilities Not Available to AI (#56)** — `_writeNodeAllowConfig()` silently failed when proot/node wasn't ready, causing the gateway to start with no `allowCommands`. Added direct file I/O fallback to write `openclaw.json` directly on the Android filesystem. Also fixed `node.capabilities` event to send both `commands` and `caps` fields matching the connect frame format
+- **Node Capabilities Not Available to AI (#56)** — `_writeNodeAllowConfig()` silently failed when proot/node wasn't ready, causing the gateway to start with no `allowCommands`. Added direct file I/O fallback to write `nastech.json` directly on the Android filesystem. Also fixed `node.capabilities` event to send both `commands` and `caps` fields matching the connect frame format
 
 ### Node Command Reference Update
 
@@ -58,7 +58,7 @@
 
 ### Bug Fixes
 
-- **Setup State Detection (#44)** — `openclawx onboard` no longer says setup isn't done after a successful setup. Replaced slow proot exec check with fast filesystem check for openclaw detection, with a longer-timeout fallback
+- **Setup State Detection (#44)** — `nastechx onboard` no longer says setup isn't done after a successful setup. Replaced slow proot exec check with fast filesystem check for nastech detection, with a longer-timeout fallback
 - **DNS / No Internet Inside Proot (#45)** — resolv.conf is now written to both `config/resolv.conf` (bind-mount source) and `rootfs/ubuntu/etc/resolv.conf` (direct fallback) at every entry point: app start, every proot invocation, gateway start, SSH start, and all terminal screens. Survives APK updates
 - **NVIDIA NIM Config Breaks Onboarding (#46)** — Provider config save now falls back to direct file write if the proot Node.js one-liner fails (e.g. due to DNS issues)
 
@@ -79,9 +79,9 @@
 
 ### New Features
 
-- **AI Providers** — New "AI Providers" screen to configure API keys and select models for 7 providers: Anthropic, OpenAI, Google Gemini, OpenRouter, NVIDIA NIM, DeepSeek, and xAI. Writes configuration directly to `~/.openclaw/openclaw.json`
+- **AI Providers** — New "AI Providers" screen to configure API keys and select models for 7 providers: Anthropic, OpenAI, Google Gemini, OpenRouter, NVIDIA NIM, DeepSeek, and xAI. Writes configuration directly to `~/.nastech/nastech.json`
 - **SSH Remote Access** — New "SSH Access" screen to start/stop an SSH server (sshd) inside proot, set the root password, and view connection info with copyable `ssh` commands. Runs as an Android foreground service for persistence
-- **Configure Menu** — New "Configure" dashboard card opens `openclaw configure` in a built-in terminal for managing gateway settings
+- **Configure Menu** — New "Configure" dashboard card opens `nastech configure` in a built-in terminal for managing gateway settings
 - **Clickable URLs** — Terminal and onboarding screens detect URLs at tap position (joining adjacent lines, stripping box-drawing characters) and offer Open/Copy/Cancel dialog
 
 ### Bug Fixes
@@ -105,7 +105,7 @@
 
 ### New Features
 
-- **Config Snapshot (#27)** — Added Export/Import Snapshot buttons under Settings > Maintenance. Export saves `openclaw.json` and app preferences to a JSON file; Import restores them. A "Snapshot" quick action card is also available on the dashboard
+- **Config Snapshot (#27)** — Added Export/Import Snapshot buttons under Settings > Maintenance. Export saves `nastech.json` and app preferences to a JSON file; Import restores them. A "Snapshot" quick action card is also available on the dashboard
 - **Storage Access** — Added Termux-style "Setup Storage" in Settings. Grants shared storage permission and bind-mounts `/sdcard` into proot, so files in `/sdcard/Download` (etc.) are accessible from inside the Ubuntu environment. Snapshots are saved to `/sdcard/Download/` when permission is granted
 
 ---
@@ -165,7 +165,7 @@
 
 - **Fade-In Animation** — 800ms fade-in on launch with easeOut curve
 - **App Icon Branding** — Uses ic_launcher.png instead of generic cloud icon
-- **Inter Bold Wordmark** — "OpenClaw" displayed in Inter weight 800 with letter-spacing
+- **Inter Bold Wordmark** — "Nastech" displayed in Inter weight 800 with letter-spacing
 
 ### Polish
 
@@ -178,7 +178,7 @@
 
 ### CI
 
-- Removed OpenClaw Node app build from workflow (gateway-only CI now)
+- Removed Nastech Node app build from workflow (gateway-only CI now)
 
 ---
 
@@ -202,10 +202,10 @@
 
 ### Fixes
 
-- **Gateway Config** — Patches `/root/.openclaw/openclaw.json` to clear `denyCommands` and set `allowCommands` for all 15 commands (previously wrote to wrong config file)
+- **Gateway Config** — Patches `/root/.nastech/nastech.json` to clear `denyCommands` and set `allowCommands` for all 15 commands (previously wrote to wrong config file)
 - **Location Timeout** — Added 10-second time limit to GPS fix with fallback to last known position
 - **Canvas Errors** — Returns honest `NOT_IMPLEMENTED` errors instead of fake success responses
-- **Node Display Name** — Renamed from "OpenClaw Termux" to "OpenClawX Node"
+- **Node Display Name** — Renamed from "Nastech Termux" to "NastechX Node"
 
 ### Node Command Reference
 

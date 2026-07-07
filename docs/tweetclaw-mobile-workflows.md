@@ -1,37 +1,37 @@
 # TweetClaw Mobile X/Twitter Workflows
 
-Use this guide after OpenClaw is running on Android through the Flutter app or the Termux CLI. It adds the optional [TweetClaw](https://github.com/Xquik-dev/tweetclaw) OpenClaw plugin for structured X/Twitter work from the same mobile OpenClaw gateway.
+Use this guide after Nastech is running on Android through the Flutter app or the Termux CLI. It adds the optional [TweetClaw](https://github.com/Xquik-dev/tweetclaw) Nastech plugin for structured X/Twitter work from the same mobile Nastech agent.
 
 TweetClaw is useful when an agent needs to scrape tweets, search tweets, search tweet replies, look up users, export followers, download media, monitor tweets, deliver webhooks, run giveaway draws, or perform reviewed actions such as post tweets, post tweet replies, direct messages, and media upload.
 
 ## Prerequisites
 
-- Finish `openclawx setup`.
-- Run `openclawx onboarding` and choose `Loopback (127.0.0.1)` for non-rooted devices.
-- Start the gateway with `openclawx start` or from the Flutter dashboard.
-- Disable battery optimization for OpenClaw or Termux before using monitors or webhook delivery.
-- Keep credentials in OpenClaw plugin config. Do not paste API keys, signing keys, passwords, cookies, account IDs, or payment material into chat, issues, logs, screenshots, or shared files.
+- Finish `nastech setup`.
+- Run `nastech onboarding` and choose `Loopback (127.0.0.1)` for non-rooted devices.
+- Start the agent with `nastech start` or from the Flutter dashboard.
+- Disable battery optimization for Nastech or Termux before using monitors or webhook delivery.
+- Keep credentials in Nastech plugin config. Do not paste API keys, signing keys, passwords, cookies, account IDs, or payment material into chat, issues, logs, screenshots, or shared files.
 
 ## Install TweetClaw
 
-From Termux, use the `openclawx` pass-through command:
+From Termux, use the `nastech` pass-through command:
 
 ```bash
-openclawx plugins install @xquik/tweetclaw
+nastech plugins install @xquik/tweetclaw
 ```
 
-Or open the Ubuntu shell and run the same OpenClaw command directly:
+Or open the Ubuntu shell and run the same Nastech command directly:
 
 ```bash
-openclawx shell
-openclaw plugins install @xquik/tweetclaw
+nastech shell
+nastech plugins install @xquik/tweetclaw
 ```
 
 Verify the plugin runtime and bundled skill:
 
 ```bash
-openclawx plugins inspect tweetclaw --runtime
-openclawx skills info tweetclaw
+nastech plugins inspect tweetclaw --runtime
+nastech skills info tweetclaw
 ```
 
 Expected result:
@@ -43,17 +43,17 @@ Expected result:
 
 ## Configure Credentials
 
-Open a shell inside the Ubuntu runtime before storing credentials or JSON config values. This preserves quoting and keeps the command behavior identical to OpenClaw on desktop:
+Open a shell inside the Ubuntu runtime before storing credentials or JSON config values. This preserves quoting and keeps the command behavior identical to Nastech on desktop:
 
 ```bash
-openclawx shell
+nastech shell
 ```
 
-Set an API key through environment variables or your preferred password manager, then store it in OpenClaw plugin config:
+Set an API key through environment variables or your preferred password manager, then store it in Nastech plugin config:
 
 ```bash
 export XQUIK_API_KEY="replace-with-your-key"
-openclaw config set plugins.entries.tweetclaw.config.apiKey "$XQUIK_API_KEY"
+nastech config set plugins.entries.tweetclaw.config.apiKey "$XQUIK_API_KEY"
 unset XQUIK_API_KEY
 ```
 
@@ -62,17 +62,17 @@ For a shell-history-safe prompt, read the key without echoing it:
 ```bash
 read -rsp "Xquik API key: " XQUIK_API_KEY
 printf "\n"
-openclaw config set plugins.entries.tweetclaw.config.apiKey "$XQUIK_API_KEY"
+nastech config set plugins.entries.tweetclaw.config.apiKey "$XQUIK_API_KEY"
 unset XQUIK_API_KEY
 ```
 
-If the agent can see the TweetClaw skill but cannot call its tools, add only the plugin tools to the existing OpenClaw tool profile:
+If the agent can see the TweetClaw skill but cannot call its tools, add only the plugin tools to the existing Nastech tool profile:
 
 ```bash
-openclaw config set tools.alsoAllow '["explore", "tweetclaw"]'
+nastech config set tools.alsoAllow '["explore", "tweetclaw"]'
 ```
 
-Use `tools.alsoAllow` so normal OpenClaw tools stay available.
+Use `tools.alsoAllow` so normal Nastech tools stay available.
 
 ## Mobile Workflow Recipes
 
@@ -108,13 +108,13 @@ Use this for:
 
 ### Monitor Tweets And Deliver Webhooks
 
-Before monitors or webhooks, disable Android battery optimization for OpenClaw or Termux. Confirm the target account, keyword, delivery URL, event types, and stop condition.
+Before monitors or webhooks, disable Android battery optimization for Nastech or Termux. Confirm the target account, keyword, delivery URL, event types, and stop condition.
 
 Use this for:
 
 - Monitoring brand or project mentions.
 - Notifying an external endpoint when a new matching tweet appears.
-- Keeping a mobile OpenClaw gateway available for lightweight alerting.
+- Keeping a mobile Nastech agent available for lightweight alerting.
 
 ### Reviewed Writes
 
@@ -131,7 +131,7 @@ If you revise the text after approval, approve the final version again before se
 
 ## Android Safety Notes
 
-- Keep the OpenClaw binding on `127.0.0.1` unless you intentionally expose it.
+- Keep the Nastech binding on `127.0.0.1` unless you intentionally expose it.
 - Avoid storing raw exports, direct messages, or media downloads on `/sdcard`.
 - Do not grant full storage access unless you specifically need the proot environment to read or write shared files.
 - Prefer Wi-Fi or a stable network for longer follower exports, monitors, webhooks, and media downloads.
@@ -142,18 +142,18 @@ If you revise the text after approval, approve the final version again before se
 If install fails, run:
 
 ```bash
-openclawx doctor
-openclawx status
+nastech doctor
+nastech status
 ```
 
 If runtime loading fails, inspect the plugin:
 
 ```bash
-openclawx plugins inspect tweetclaw --runtime
+nastech plugins inspect tweetclaw --runtime
 ```
 
-When tools are hidden, open the Ubuntu shell, set `tools.alsoAllow` for `explore` and `tweetclaw`, then restart the gateway.
+When tools are hidden, open the Ubuntu shell, set `tools.alsoAllow` for `explore` and `tweetclaw`, then restart the agent.
 
-When live calls return setup guidance, configure the API key again and verify the value was stored in OpenClaw config, not in the chat transcript.
+When live calls return setup guidance, configure the API key again and verify the value was stored in Nastech config, not in the chat transcript.
 
-If monitors stop firing in the background, check Android battery settings and make sure the gateway remains active.
+If monitors stop firing in the background, check Android battery settings and make sure the agent remains active.

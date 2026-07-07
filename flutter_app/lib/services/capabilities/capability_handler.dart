@@ -23,7 +23,7 @@ abstract class CapabilityHandler {
           return NodeFrame.response('', error: {
             'code': 'PERMISSION_PERMANENTLY_DENIED',
             'message':
-                '$name permission permanently denied. Enable it in Android Settings > Apps > OpenClaw > Permissions.',
+                '$name permission permanently denied. Enable it in Android Settings > Apps > Nastech > Permissions.',
           });
         }
       }

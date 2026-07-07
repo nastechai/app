@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -29,7 +29,7 @@ class BootstrapManager(
     private val libDir get() = "$filesDir/lib"
 
     fun setupDirectories() {
-        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.openclaw", libDir).forEach {
+        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.nastech", libDir).forEach {
             File(it).mkdirs()
         }
         // Termux's proot links against libtalloc.so.2 but Android extracts it
@@ -52,29 +52,29 @@ class BootstrapManager(
     fun isBootstrapComplete(): Boolean {
         val rootfs = File(rootfsDir)
         val binBash = File("$rootfsDir/bin/bash")
-        val bypass = File("$rootfsDir/root/.openclaw/bionic-bypass.js")
+        val bypass = File("$rootfsDir/root/.nastech/bionic-bypass.js")
         val node = File("$rootfsDir/usr/local/bin/node")
-        val openclaw = File("$rootfsDir/usr/local/lib/node_modules/openclaw/package.json")
+        val nastech = File("$rootfsDir/usr/local/lib/node_modules/nastech/package.json")
         return rootfs.exists() && binBash.exists() && bypass.exists()
-            && node.exists() && openclaw.exists()
+            && node.exists() && nastech.exists()
     }
 
     fun getBootstrapStatus(): Map<String, Any> {
         val rootfsExists = File(rootfsDir).exists()
         val binBashExists = File("$rootfsDir/bin/bash").exists()
         val nodeExists = File("$rootfsDir/usr/local/bin/node").exists()
-        val openclawExists = File("$rootfsDir/usr/local/lib/node_modules/openclaw/package.json").exists()
-        val bypassExists = File("$rootfsDir/root/.openclaw/bionic-bypass.js").exists()
+        val nastechExists = File("$rootfsDir/usr/local/lib/node_modules/nastech/package.json").exists()
+        val bypassExists = File("$rootfsDir/root/.nastech/bionic-bypass.js").exists()
 
         return mapOf(
             "rootfsExists" to rootfsExists,
             "binBashExists" to binBashExists,
             "nodeInstalled" to nodeExists,
-            "openclawInstalled" to openclawExists,
+            "nastechInstalled" to nastechExists,
             "bypassInstalled" to bypassExists,
             "rootfsPath" to rootfsDir,
             "complete" to (rootfsExists && binBashExists && bypassExists
-                && nodeExists && openclawExists)
+                && nodeExists && nastechExists)
         )
     }
 
@@ -401,7 +401,7 @@ class BootstrapManager(
         //    fails with "Operation not permitted". Tell apt to stay as root.
         val aptConfDir = File("$rootfsDir/etc/apt/apt.conf.d")
         aptConfDir.mkdirs()
-        File(aptConfDir, "01-openclaw-proot").writeText(
+        File(aptConfDir, "01-nastech-proot").writeText(
             "APT::Sandbox::User \"root\";\n" +
             // Disable PTY allocation when APT forks dpkg. APT's child process
             // calls SetupSlavePtyMagic() before execvp(dpkg); in proot on
@@ -417,7 +417,7 @@ class BootstrapManager(
         //    - no-debsig: skip signature verification
         val dpkgConfDir = File("$rootfsDir/etc/dpkg/dpkg.cfg.d")
         dpkgConfDir.mkdirs()
-        File(dpkgConfDir, "01-openclaw-proot").writeText(
+        File(dpkgConfDir, "01-nastech-proot").writeText(
             "force-unsafe-io\n" +
             "no-debsig\n" +
             "force-overwrite\n" +
@@ -448,18 +448,18 @@ class BootstrapManager(
             "$rootfsDir/root/.config",
             "$rootfsDir/usr/local/lib/node_modules",
             "$rootfsDir/usr/local/bin",
-            // OpenClaw runtime directories (can't mkdir at runtime)
-            "$rootfsDir/root/.openclaw",
-            "$rootfsDir/root/.openclaw/data",
-            "$rootfsDir/root/.openclaw/memory",
-            "$rootfsDir/root/.openclaw/skills",
-            "$rootfsDir/root/.openclaw/config",
-            "$rootfsDir/root/.openclaw/extensions",
-            "$rootfsDir/root/.openclaw/logs",
-            "$rootfsDir/root/.config/openclaw",
+            // Nastech runtime directories (can't mkdir at runtime)
+            "$rootfsDir/root/.nastech",
+            "$rootfsDir/root/.nastech/data",
+            "$rootfsDir/root/.nastech/memory",
+            "$rootfsDir/root/.nastech/skills",
+            "$rootfsDir/root/.nastech/config",
+            "$rootfsDir/root/.nastech/extensions",
+            "$rootfsDir/root/.nastech/logs",
+            "$rootfsDir/root/.config/nastech",
             "$rootfsDir/root/.local/share",
             "$rootfsDir/root/.cache",
-            "$rootfsDir/root/.cache/openclaw",
+            "$rootfsDir/root/.cache/nastech",
             "$rootfsDir/root/.cache/node",
             // General runtime directories
             "$rootfsDir/var/tmp",
@@ -753,7 +753,7 @@ class BootstrapManager(
         binDir.mkdirs()
 
         // Parse bin entries from package.json
-        // "bin": "cli.js"  OR  "bin": {"openclaw": "bin/openclaw.js", ...}
+        // "bin": "cli.js"  OR  "bin": {"nastech": "bin/nastech.js", ...}
         val binEntries = mutableMapOf<String, String>()
 
         val binMatch = Regex(""""bin"\s*:\s*(\{[^}]*\}|"[^"]*")""").find(json)
@@ -823,7 +823,7 @@ class BootstrapManager(
     }
 
     fun installBionicBypass() {
-        val bypassDir = File("$rootfsDir/root/.openclaw")
+        val bypassDir = File("$rootfsDir/root/.nastech")
         if (!bypassDir.exists()) {
             bypassDir.mkdirs()
         }
@@ -838,7 +838,7 @@ class BootstrapManager(
         //    process.cwd() is called by Node's CJS module resolver and npm.
         //    This MUST be loaded before any other module.
         val cwdFixContent = """
-// OpenClaw CWD Fix - Auto-generated
+// Nastech CWD Fix - Auto-generated
 // proot on Android 10+ returns ENOSYS for getcwd() syscall.
 // Patch process.cwd to return /root on failure.
 const _origCwd = process.cwd;
@@ -851,14 +851,14 @@ process.cwd = function() {
 
         // 2. Node wrapper — patches broken syscalls then runs the target script.
         //    Used during bootstrap (where NODE_OPTIONS must be unset).
-        //    Usage: node /root/.openclaw/node-wrapper.js <script> [args...]
+        //    Usage: node /root/.nastech/node-wrapper.js <script> [args...]
         val wrapperContent = """
-// OpenClaw Node Wrapper - Auto-generated
+// Nastech Node Wrapper - Auto-generated
 // Patches broken proot syscalls, then loads the target script.
 // Used for bootstrap-time npm operations.
 
 // --- Load shared proot compatibility patches ---
-require('/root/.openclaw/proot-compat.js');
+require('/root/.nastech/proot-compat.js');
 
 // Load target script
 const script = process.argv[2];
@@ -877,7 +877,7 @@ if (script) {
         //    Patches: process.cwd, fs.mkdir, child_process.spawn, os.*, fs.rename,
         //    fs.watch, fs.chmod/chown.
         val prootCompatContent = """
-// OpenClaw Proot Compatibility Layer - Auto-generated
+// Nastech Proot Compatibility Layer - Auto-generated
 // Patches all known broken syscalls in proot on Android 10+.
 // This file is require()'d by both node-wrapper.js and bionic-bypass.js.
 
@@ -1213,15 +1213,15 @@ _cp.execFileSync = function(file, args, options) {
 """.trimIndent()
         File(bypassDir, "proot-compat.js").writeText(prootCompatContent)
 
-        // 4. Bionic bypass — comprehensive runtime patcher for openclaw.
-        //    Loaded via NODE_OPTIONS="--require /root/.openclaw/bionic-bypass.js"
+        // 4. Bionic bypass — comprehensive runtime patcher for nastech.
+        //    Loaded via NODE_OPTIONS="--require /root/.nastech/bionic-bypass.js"
         val bypassContent = """
-// OpenClaw Bionic Bypass - Auto-generated
+// Nastech Bionic Bypass - Auto-generated
 // Comprehensive runtime compatibility layer for proot on Android 10+.
 // Loaded via NODE_OPTIONS before any application code runs.
 
 // Load all proot compatibility patches (shared with node-wrapper.js)
-require('/root/.openclaw/proot-compat.js');
+require('/root/.nastech/proot-compat.js');
 """.trimIndent()
 
         File(bypassDir, "bionic-bypass.js").writeText(bypassContent)
@@ -1241,16 +1241,16 @@ require('/root/.openclaw/proot-compat.js');
 
         // Patch .bashrc
         val bashrc = File("$rootfsDir/root/.bashrc")
-        val exportLine = "export NODE_OPTIONS=\"--require /root/.openclaw/bionic-bypass.js\""
+        val exportLine = "export NODE_OPTIONS=\"--require /root/.nastech/bionic-bypass.js\""
 
         val existing = if (bashrc.exists()) bashrc.readText() else ""
         if (!existing.contains("bionic-bypass")) {
-            bashrc.appendText("\n# OpenClaw Bionic Bypass\n$exportLine\n")
+            bashrc.appendText("\n# Nastech Bionic Bypass\n$exportLine\n")
         }
 
-        // Pre-seed openclaw.json with gateway.mode=local so the gateway
+        // Pre-seed nastech.json with gateway.mode=local so the gateway
         // doesn't reject startup with "set gateway.mode=local" (#93, #90).
-        val configFile = File(bypassDir, "openclaw.json")
+        val configFile = File(bypassDir, "nastech.json")
         if (!configFile.exists()) {
             configFile.writeText("""
 {
@@ -1350,7 +1350,7 @@ require('/root/.openclaw/proot-compat.js');
         } catch (_: Exception) {}
     }
 
-    /** Read a file from inside the rootfs (e.g. /root/.openclaw/openclaw.json). */
+    /** Read a file from inside the rootfs (e.g. /root/.nastech/nastech.json). */
     fun readRootfsFile(path: String): String? {
         val file = File("$rootfsDir/$path")
         return if (file.exists()) file.readText() else null
@@ -1459,10 +1459,10 @@ require('/root/.openclaw/proot-compat.js');
         }
     }
 
-    private fun checkOpenClawInProot(): Boolean {
+    private fun checkNastechInProot(): Boolean {
         return try {
             val pm = ProcessManager(filesDir, nativeLibDir)
-            val output = pm.runInProotSync("command -v openclaw")
+            val output = pm.runInProotSync("command -v nastech")
             output.trim().isNotEmpty()
         } catch (e: Exception) {
             false

@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -62,7 +62,7 @@ class TerminalSessionService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "OpenClaw::TerminalWakeLock"
+            "Nastech::TerminalWakeLock"
         )
         wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
     }
@@ -78,10 +78,10 @@ class TerminalSessionService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 GatewayService.CHANNEL_ID,
-                "OpenClaw Gateway",
+                "Nastech Gateway",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Keeps the OpenClaw gateway running in the background"
+                description = "Keeps the Nastech gateway running in the background"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -97,7 +97,7 @@ class TerminalSessionService : Service() {
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, GatewayService.CHANNEL_ID)
-                .setContentTitle("OpenClaw Terminal")
+                .setContentTitle("Nastech Terminal")
                 .setContentText("Terminal session active")
                 .setSmallIcon(android.R.drawable.ic_menu_manage)
                 .setContentIntent(pendingIntent)
@@ -106,7 +106,7 @@ class TerminalSessionService : Service() {
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("OpenClaw Terminal")
+                .setContentTitle("Nastech Terminal")
                 .setContentText("Terminal session active")
                 .setSmallIcon(android.R.drawable.ic_menu_manage)
                 .setContentIntent(pendingIntent)

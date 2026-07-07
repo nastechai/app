@@ -1,4 +1,4 @@
-package com.nxg.openclawproot
+package com.nxg.nastechproot
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -22,7 +22,7 @@ import java.net.NetworkInterface
  */
 class SshForegroundService : Service() {
     companion object {
-        const val CHANNEL_ID = "openclaw_ssh"
+        const val CHANNEL_ID = "nastech_ssh"
         const val NOTIFICATION_ID = 5
         const val EXTRA_PORT = "port"
         var isRunning = false
@@ -218,7 +218,7 @@ class SshForegroundService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "OpenClaw::SshWakeLock"
+            "Nastech::SshWakeLock"
         )
         wakeLock?.acquire(24 * 60 * 60 * 1000L)
     }
@@ -234,7 +234,7 @@ class SshForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "OpenClaw SSH",
+                "Nastech SSH",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Keeps the SSH server running in the background"
@@ -258,7 +258,7 @@ class SshForegroundService : Service() {
             Notification.Builder(this)
         }
 
-        builder.setContentTitle("OpenClaw SSH")
+        builder.setContentTitle("Nastech SSH")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setContentIntent(pendingIntent)

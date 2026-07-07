@@ -1,4 +1,4 @@
-name: Build OpenClaw Apps
+name: Build Nastech Apps
 
 on:
   push:
@@ -132,20 +132,20 @@ jobs:
 
           # Fat APK
           cp flutter_app/build/app/outputs/flutter-apk/app-release.apk \
-             "artifacts/OpenClaw-v${VERSION}-universal.apk"
+             "artifacts/Nastech-v${VERSION}-universal.apk"
 
           # Per-ABI APKs
           for abi in arm64-v8a armeabi-v7a x86_64; do
             SRC="flutter_app/build/app/outputs/flutter-apk/app-${abi}-release.apk"
             if [ -f "$SRC" ]; then
-              cp "$SRC" "artifacts/OpenClaw-v${VERSION}-${abi}.apk"
+              cp "$SRC" "artifacts/Nastech-v${VERSION}-${abi}.apk"
             fi
           done
 
           # AAB
           AAB="flutter_app/build/app/outputs/bundle/release/app-release.aab"
           if [ -f "$AAB" ]; then
-            cp "$AAB" "artifacts/OpenClaw-v${VERSION}.aab"
+            cp "$AAB" "artifacts/Nastech-v${VERSION}.aab"
           fi
 
           # Summary
@@ -164,14 +164,14 @@ jobs:
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: openclaw-apks
+          name: nastech-apks
           path: artifacts/*.apk
           retention-days: 30
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openclaw-aab
+          name: nastech-aab
           path: artifacts/*.aab
           retention-days: 30
 
@@ -192,11 +192,11 @@ jobs:
               ``,
               `| Architecture | Download |`,
               `|---|---|`,
-              `| arm64-v8a (recommended) | [OpenClaw-v${version}-arm64-v8a.apk](${runUrl}#artifacts) |`,
-              `| armeabi-v7a (32-bit) | [OpenClaw-v${version}-armeabi-v7a.apk](${runUrl}#artifacts) |`,
-              `| x86_64 (emulator) | [OpenClaw-v${version}-x86_64.apk](${runUrl}#artifacts) |`,
-              `| Universal (all ABIs) | [OpenClaw-v${version}-universal.apk](${runUrl}#artifacts) |`,
-              `| App Bundle (Play Store) | [OpenClaw-v${version}.aab](${runUrl}#artifacts) |`,
+              `| arm64-v8a (recommended) | [Nastech-v${version}-arm64-v8a.apk](${runUrl}#artifacts) |`,
+              `| armeabi-v7a (32-bit) | [Nastech-v${version}-armeabi-v7a.apk](${runUrl}#artifacts) |`,
+              `| x86_64 (emulator) | [Nastech-v${version}-x86_64.apk](${runUrl}#artifacts) |`,
+              `| Universal (all ABIs) | [Nastech-v${version}-universal.apk](${runUrl}#artifacts) |`,
+              `| App Bundle (Play Store) | [Nastech-v${version}.aab](${runUrl}#artifacts) |`,
               ``,
               `> Download from [**Actions Artifacts**](${runUrl}#artifacts)`,
               ``,
@@ -266,13 +266,13 @@ jobs:
       - name: Download APK artifacts
         uses: actions/download-artifact@v4
         with:
-          name: openclaw-apks
+          name: nastech-apks
           path: artifacts
 
       - name: Download AAB artifact
         uses: actions/download-artifact@v4
         with:
-          name: openclaw-aab
+          name: nastech-aab
           path: artifacts
 
       - name: Get version
@@ -293,20 +293,20 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: OpenClaw v${{ steps.version.outputs.version }}
+          name: Nastech v${{ steps.version.outputs.version }}
           body: |
-            ## OpenClaw Android v${{ steps.version.outputs.version }}
+            ## Nastech Android v${{ steps.version.outputs.version }}
 
             Standalone Android app — no Termux required.
 
             ### Downloads
             | File | Description |
             |------|-------------|
-            | `OpenClaw-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | Most modern Android phones (recommended) |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | Older 32-bit ARM devices |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-x86_64.apk` | Emulators / x86 devices |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-universal.apk` | All architectures (larger) |
-            | `OpenClaw-v${{ steps.version.outputs.version }}.aab` | Android App Bundle (Play Store) |
+            | `Nastech-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | Most modern Android phones (recommended) |
+            | `Nastech-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | Older 32-bit ARM devices |
+            | `Nastech-v${{ steps.version.outputs.version }}-x86_64.apk` | Emulators / x86 devices |
+            | `Nastech-v${{ steps.version.outputs.version }}-universal.apk` | All architectures (larger) |
+            | `Nastech-v${{ steps.version.outputs.version }}.aab` | Android App Bundle (Play Store) |
 
             ### First Run
             1. Install the APK
