@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -261,7 +261,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Download APK artifacts
         uses: actions/download-artifact@v4
@@ -291,6 +291,8 @@ jobs:
       - name: Create Release
         if: steps.version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Nastech v${{ steps.version.outputs.version }}
