@@ -156,7 +156,7 @@ class _SplashScreenState extends State<SplashScreen>
                 const nodeRun = 'node $wrapper';
                 const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
                 await NativeBridge.runInProot(
-                  '$nodeRun $npmCli install -g nastech-termux',
+                  'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash',
                   timeout: 1800,
                 );
                 await NativeBridge.createBinWrappers('nastech');
