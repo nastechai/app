@@ -292,7 +292,7 @@ jobs:
         if: steps.version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Nastech v${{ steps.version.outputs.version }}
