@@ -1,12 +1,12 @@
 {
-  "name": "openclaw-termux",
+  "name": "nastech-termux",
   "version": "1.8.7",
-  "description": "OpenClaw AI Gateway for Android Termux with Bionic Bypass",
+  "description": "Nastech AI Agent for Android Termux with Bionic Bypass",
   "main": "lib/index.js",
   "type": "module",
   "bin": {
-    "openclawx": "bin/openclawx",
-    "openclawx-setup": "bin/openclawx"
+    "nastech": "bin/nastech",
+    "nastech-setup": "bin/nastech"
   },
   "scripts": {
     "test": "node lib/test.js",
@@ -15,23 +15,23 @@
     "postinstall": "node lib/postinstall.js"
   },
   "keywords": [
-    "openclaw",
+    "nastech",
     "termux",
     "android",
     "ai",
-    "gateway",
+    "agent",
     "gemini",
     "claude"
   ],
-  "author": "Mithun Gowda B <mithungowda.b7411@gmail.com>",
+  "author": "nastechai <nastechai@github.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mithun50/openclaw-termux.git"
+    "url": "git+https://github.com/nastechai/nastech-agent.git"
   },
-  "homepage": "https://github.com/mithun50/openclaw-termux#readme",
+  "homepage": "https://github.com/nastechai/nastech-agent#readme",
   "bugs": {
-    "url": "https://github.com/mithun50/openclaw-termux/issues"
+    "url": "https://github.com/nastechai/nastech-agent/issues"
   },
   "engines": {
     "node": ">=22.0.0"

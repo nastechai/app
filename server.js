@@ -1,6 +1,6 @@
 /**
- * Replit development server for OpenClaw-Termux
- * Serves an info/status page on port 5000 since this is a CLI tool
+ * Replit development server for Nastech-Termux
+ * Serves an info/status page on port 5000
  */
 
 import http from 'http';
@@ -16,7 +16,7 @@ const html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenClaw-Termux v${pkg.version}</title>
+  <title>Nastech-Termux v${pkg.version}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -29,14 +29,8 @@ const html = `<!DOCTYPE html>
       justify-content: center;
       padding: 2rem;
     }
-    .container {
-      max-width: 720px;
-      width: 100%;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
+    .container { max-width: 720px; width: 100%; }
+    .header { text-align: center; margin-bottom: 2.5rem; }
     .badge {
       display: inline-block;
       background: #238636;
@@ -48,16 +42,8 @@ const html = `<!DOCTYPE html>
       font-weight: 600;
       letter-spacing: 0.05em;
     }
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: #58a6ff;
-      margin-bottom: 0.5rem;
-    }
-    .subtitle {
-      color: #8b949e;
-      font-size: 1rem;
-    }
+    h1 { font-size: 2.2rem; font-weight: 700; color: #58a6ff; margin-bottom: 0.5rem; }
+    .subtitle { color: #8b949e; font-size: 1rem; }
     .card {
       background: #161b22;
       border: 1px solid #30363d;
@@ -75,9 +61,7 @@ const html = `<!DOCTYPE html>
       gap: 0.5rem;
     }
     .card h2 .icon { font-size: 1.1rem; }
-    .cmd-list {
-      list-style: none;
-    }
+    .cmd-list { list-style: none; }
     .cmd-list li {
       display: flex;
       align-items: flex-start;
@@ -102,10 +86,7 @@ const html = `<!DOCTYPE html>
       line-height: 1.5;
       padding-top: 0.15rem;
     }
-    .step-list {
-      list-style: none;
-      counter-reset: steps;
-    }
+    .step-list { list-style: none; counter-reset: steps; }
     .step-list li {
       counter-increment: steps;
       display: flex;
@@ -156,29 +137,34 @@ const html = `<!DOCTYPE html>
   <div class="container">
     <div class="header">
       <div class="badge">v${pkg.version}</div>
-      <h1>OpenClaw-Termux</h1>
-      <p class="subtitle">AI Gateway CLI for Android &amp; Termux</p>
+      <h1>Nastech-Termux</h1>
+      <p class="subtitle">AI Agent CLI for Android &amp; Termux</p>
     </div>
 
     <div class="card">
       <h2><span class="icon">⚡</span> Quick Start (in Termux)</h2>
       <ul class="step-list">
-        <li>Install: <code>npm install -g openclaw-termux</code></li>
-        <li>Run setup: <code>openclawx setup</code></li>
-        <li>Configure API keys: <code>openclawx onboarding</code> — select <strong>Loopback (127.0.0.1)</strong></li>
-        <li>Start gateway: <code>openclawx start</code></li>
+        <li>Install: <code>npm install -g nastech-termux</code></li>
+        <li>Run setup: <code>nastech setup</code></li>
+        <li>Install Node.js inside Ubuntu proot</li>
+        <li>Install Python + uv inside Ubuntu proot</li>
+        <li>Install Nastech agent: <code>pip install nastech-agent[termux]</code></li>
+        <li>Configure Bionic Bypass for Android networking</li>
+        <li>Configure Termux wake-lock for background operation</li>
+        <li>Configure API keys: <code>nastech onboarding</code> — select <strong>Loopback (127.0.0.1)</strong></li>
       </ul>
     </div>
 
     <div class="card">
       <h2><span class="icon">🛠</span> CLI Commands</h2>
       <ul class="cmd-list">
-        <li><code>openclawx setup</code><span class="cmd-desc">Full install: proot-distro → Ubuntu → Node.js 22 → OpenClaw</span></li>
-        <li><code>openclawx status</code><span class="cmd-desc">Check installation status of all components</span></li>
-        <li><code>openclawx start</code><span class="cmd-desc">Start the OpenClaw AI gateway inside proot</span></li>
-        <li><code>openclawx shell</code><span class="cmd-desc">Open an Ubuntu shell with Bionic Bypass active</span></li>
-        <li><code>openclawx onboarding</code><span class="cmd-desc">Configure your AI provider API keys</span></li>
-        <li><code>openclawx &lt;cmd&gt;</code><span class="cmd-desc">Pass any command directly to openclaw inside proot</span></li>
+        <li><code>nastech setup</code><span class="cmd-desc">Full install: proot-distro → Ubuntu → Node.js → Python → uv → Nastech</span></li>
+        <li><code>nastech status</code><span class="cmd-desc">Check installation status of all components</span></li>
+        <li><code>nastech start</code><span class="cmd-desc">Start the Nastech AI agent inside proot</span></li>
+        <li><code>nastech shell</code><span class="cmd-desc">Open an Ubuntu shell with Bionic Bypass active</span></li>
+        <li><code>nastech onboarding</code><span class="cmd-desc">Configure your AI provider API keys</span></li>
+        <li><code>nastech gateway</code><span class="cmd-desc">Start the messaging gateway (Telegram, Discord, Slack, WhatsApp…)</span></li>
+        <li><code>nastech &lt;cmd&gt;</code><span class="cmd-desc">Pass any command directly to nastech inside proot</span></li>
       </ul>
     </div>
 
@@ -188,7 +174,8 @@ const html = `<!DOCTYPE html>
         <li><code>Anthropic</code><span class="cmd-desc">Claude models via the Anthropic API</span></li>
         <li><code>OpenAI</code><span class="cmd-desc">GPT models via the OpenAI API</span></li>
         <li><code>Google Gemini</code><span class="cmd-desc">Gemini models via Google AI API</span></li>
-        <li><code>+ more</code><span class="cmd-desc">Any provider supported by the OpenClaw gateway</span></li>
+        <li><code>OpenRouter</code><span class="cmd-desc">Any model via OpenRouter aggregator</span></li>
+        <li><code>+ more</code><span class="cmd-desc">Any provider supported by the Nastech agent</span></li>
       </ul>
     </div>
 
@@ -196,13 +183,13 @@ const html = `<!DOCTYPE html>
       <strong>Note:</strong> This project is designed to run on Android devices in Termux.
       The Replit environment is used for development and code browsing only.
       To use the CLI, install it on your Android device via Termux:
-      <code>npm install -g openclaw-termux</code>
+      <code>npm install -g nastech-termux</code>
     </div>
 
     <div class="footer">
       <a href="${pkg.homepage}" target="_blank">GitHub</a> &middot;
       <a href="${pkg.bugs.url}" target="_blank">Report Issues</a> &middot;
-      ${pkg.license} License &middot; ${pkg.author.split(' <')[0]}
+      ${pkg.license} License &middot; nastechai
     </div>
   </div>
 </body>
@@ -214,5 +201,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`OpenClaw-Termux info server running at http://${HOST}:${PORT}`);
+  console.log(`Nastech-Termux info server running at http://${HOST}:${PORT}`);
 });
