@@ -119,6 +119,21 @@ fetch_for_abi() {
         echo "  [$jni_abi] WARN: libtalloc not found"
     fi
 
+    # Fetch libandroid-shmem — required by proot for shared memory on Android
+    local shmem_dir="$extract_base/shmem"
+    if fetch_termux_pkg "libandroid-shmem" "$deb_arch" "$shmem_dir"; then
+        local shmem_lib
+        shmem_lib=$(find "$shmem_dir" -name "libandroid-shmem.so" -type f | head -1)
+        if [ -n "$shmem_lib" ]; then
+            cp -L "$shmem_lib" "$out_dir/libandroid-shmem.so"
+            chmod 755 "$out_dir/libandroid-shmem.so"
+        else
+            echo "  [$jni_abi] WARN: libandroid-shmem.so not found inside package"
+        fi
+    else
+        echo "  [$jni_abi] WARN: libandroid-shmem package not found"
+    fi
+
     echo "  [$jni_abi] OK — $(ls "$out_dir"/ | tr '\n' ' ')"
 }
 
