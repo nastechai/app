@@ -157,8 +157,8 @@ class _SplashScreenState extends State<SplashScreen>
                 // (127.0.0.53) which is not running in proot — delete and
                 // replace. Also fix nsswitch.conf mDNS short-circuit for git.
                 await NativeBridge.runInProot(
-                  r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf; "
-                  r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf; "
+                  r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+                  r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf && "
                   'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
                   timeout: 1800,
                 );
