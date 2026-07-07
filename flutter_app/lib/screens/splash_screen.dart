@@ -148,18 +148,18 @@ class _SplashScreenState extends State<SplashScreen>
               } catch (_) {}
             }
 
-            // Reinstall nastech if package.json is missing (#97)
-            if (!nastechOk && nodeOk) {
+            // Reinstall nastech if binary is missing (#97)
+            if (!nastechOk) {
               setState(() => _status = 'Reinstalling Nastech...');
               try {
-                const wrapper = '/root/.nastech/node-wrapper.js';
-                const nodeRun = 'node $wrapper';
-                const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
+                // Fix Ubuntu nsswitch.conf so git can resolve DNS inside proot,
+                // then run the official install script (--skip-setup avoids
+                // interactive wizard; nastech-agent creates /usr/local/bin/nastech).
                 await NativeBridge.runInProot(
-                  'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash',
+                  r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf; "
+                  'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
                   timeout: 1800,
                 );
-                await NativeBridge.createBinWrappers('nastech');
               } catch (_) {}
             }
 

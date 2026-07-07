@@ -275,23 +275,13 @@ class BootstrapService {
         timeout: 1800,
       );
 
-      _updateSetupNotification('Creating bin wrappers...', progress: 92);
-      onProgress(const SetupState(
-        step: SetupStep.installingNastech,
-        progress: 0.7,
-        message: 'Creating bin wrappers...',
-      ));
-      // npm global install creates symlinks for bin entries, but symlinks
-      // can fail silently in proot. Create shell wrappers from Java side
-      // (reads package.json directly from rootfs filesystem — no escaping).
-      await NativeBridge.createBinWrappers('nastech');
-
       _updateSetupNotification('Verifying Nastech...', progress: 96);
       onProgress(const SetupState(
         step: SetupStep.installingNastech,
         progress: 0.9,
         message: 'Verifying Nastech...',
       ));
+      // nastech-agent (Python) creates /usr/local/bin/nastech directly.
       await NativeBridge.runInProot('nastech --version || echo nastech_installed');
       onProgress(const SetupState(
         step: SetupStep.installingNastech,

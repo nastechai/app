@@ -54,7 +54,9 @@ class BootstrapManager(
         val binBash = File("$rootfsDir/bin/bash")
         val bypass = File("$rootfsDir/root/.nastech/bionic-bypass.js")
         val node = File("$rootfsDir/usr/local/bin/node")
-        val nastech = File("$rootfsDir/usr/local/lib/node_modules/nastech/package.json")
+        // nastech-agent (Python) installs its command at /usr/local/bin/nastech
+        // (FHS root layout used by install.sh when running as root on Linux)
+        val nastech = File("$rootfsDir/usr/local/bin/nastech")
         return rootfs.exists() && binBash.exists() && bypass.exists()
             && node.exists() && nastech.exists()
     }
@@ -63,7 +65,8 @@ class BootstrapManager(
         val rootfsExists = File(rootfsDir).exists()
         val binBashExists = File("$rootfsDir/bin/bash").exists()
         val nodeExists = File("$rootfsDir/usr/local/bin/node").exists()
-        val nastechExists = File("$rootfsDir/usr/local/lib/node_modules/nastech/package.json").exists()
+        // nastech-agent (Python) installs its command at /usr/local/bin/nastech
+        val nastechExists = File("$rootfsDir/usr/local/bin/nastech").exists()
         val bypassExists = File("$rootfsDir/root/.nastech/bionic-bypass.js").exists()
 
         return mapOf(
