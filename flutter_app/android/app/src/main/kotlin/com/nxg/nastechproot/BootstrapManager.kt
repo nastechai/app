@@ -503,6 +503,60 @@ class BootstrapManager(
             )
         }
 
+        // 6b. Fix /etc/nsswitch.conf — replace the hosts: line with just
+        //     "files dns". Ubuntu 24.04 ships with:
+        //       hosts: files mymachines resolve [!UNAVAIL=return] dns myhostnames
+        //     The "resolve" module contacts systemd-resolved at 127.0.0.53.
+        //     systemd-resolved is not running in proot. When the connection is
+        //     refused, libnss-resolve returns NOTFOUND (not UNAVAIL), so the
+        //     [!UNAVAIL=return] action fires and stops the lookup BEFORE reaching
+        //     the real "dns" source — every single DNS query fails.
+        //     Ubuntu 22.04 has the same issue with "mdns4_minimal [NOTFOUND=return]".
+        //     Simplest fix: overwrite the hosts line with "files dns".
+        val nsswitch = File("$rootfsDir/etc/nsswitch.conf")
+        if (nsswitch.exists()) {
+            val fixed = nsswitch.readLines().joinToString("\n") { line ->
+                if (line.trimStart().startsWith("hosts:")) {
+                    "hosts:          files dns"
+                } else {
+                    line
+                }
+            } + "\n"
+            nsswitch.writeText(fixed)
+        } else {
+            // ubuntu-base may not have nsswitch.conf — write a minimal one
+            nsswitch.parentFile?.mkdirs()
+            nsswitch.writeText(
+                "passwd:         files\n" +
+                "group:          files\n" +
+                "shadow:         files\n" +
+                "hosts:          files dns\n" +
+                "networks:       files\n" +
+                "protocols:      db files\n" +
+                "services:       db files\n" +
+                "ethers:         db files\n" +
+                "rpc:            db files\n"
+            )
+        }
+
+        // 6c. Fix /etc/resolv.conf — replace systemd-resolved stub symlink with
+        //     a real file containing working nameservers.
+        //     Ubuntu 24.04's /etc/resolv.conf is a symlink to
+        //     ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
+        //     systemd-resolved is not running in proot so all DNS fails.
+        //     ProcessManager.ensureResolvConf() also handles this before each
+        //     proot invocation, but fixing it here ensures it is correct at
+        //     extraction time and survives any re-extraction.
+        val resolvConf = File("$rootfsDir/etc/resolv.conf")
+        try {
+            val resolvPath = resolvConf.toPath()
+            if (java.nio.file.Files.isSymbolicLink(resolvPath)) {
+                resolvConf.delete() // remove the stub symlink
+            }
+            resolvConf.parentFile?.mkdirs()
+            resolvConf.writeText("nameserver 8.8.8.8\nnameserver 8.8.4.4\n")
+        } catch (_: Exception) {}
+
         // 7. Ensure /tmp exists with world-writable + sticky permissions
         //    (needed for /dev/shm bind mount and general temp file usage)
         val tmpDir = File("$rootfsDir/tmp")

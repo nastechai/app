@@ -160,9 +160,22 @@ class BootstrapService {
       // nsswitch.conf fix: "mdns4_minimal [NOTFOUND=return]" short-circuits
       // glibc before reaching real DNS — affects git AND apt-get.
       _updateSetupNotification('Fixing DNS...', progress: 47);
+      // Fix DNS — this must run before apt-get update.
+      // configureRootfs() already fixes nsswitch.conf and resolv.conf at
+      // extraction time, but we repeat it here as a belt-and-suspenders guard
+      // for retry runs where the rootfs already exists.
+      //
+      // nsswitch.conf fix: Ubuntu 24.04 has:
+      //   hosts: files mymachines resolve [!UNAVAIL=return] dns myhostnames
+      // "resolve" contacts systemd-resolved (127.0.0.53) which is not running
+      // in proot. libnss-resolve returns NOTFOUND (not UNAVAIL) on ECONNREFUSED,
+      // so [!UNAVAIL=return] fires and stops the lookup before reaching "dns".
+      // Replace the entire hosts: line with "files dns".
+      //
+      // resolv.conf fix: may be a symlink to stub 127.0.0.53; remove and replace.
       await NativeBridge.runInProot(
         r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
-        r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf",
+        r"sed -i 's/^hosts:.*/hosts:          files dns/' /etc/nsswitch.conf",
       );
 
       // --- Install base packages via apt-get (like Termux proot-distro) ---
@@ -275,23 +288,11 @@ class BootstrapService {
         message: 'Installing Nastech (this may take a few minutes)...',
       ));
 
-      // Fix DNS before running the installer:
-      //
-      // 1. Ubuntu 22.04's /etc/resolv.conf is a symlink →
-      //    ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
-      //    systemd-resolved is not running in proot, so DNS is dead.
-      //    We delete the symlink and write a real file with working nameservers.
-      //    (Java-side ensureResolvConf() does the same before starting proot,
-      //    but running it here too handles any corner-cases.)
-      //
-      // 2. Ubuntu's nsswitch.conf has "mdns4_minimal [NOTFOUND=return]" which
-      //    short-circuits glibc DNS before reaching real nameservers (curl
-      //    bypasses this via c-ares, but git uses glibc NSS).
-      //
-      // 3. Then run the official nastech-agent install script.
+      // Run the official nastech-agent install script.
+      // DNS was already fixed by the step above; repeat here for retry runs.
       await NativeBridge.runInProot(
         r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
-        r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf && "
+        r"sed -i 's/^hosts:.*/hosts:          files dns/' /etc/nsswitch.conf && "
         'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
         timeout: 1800,
       );
