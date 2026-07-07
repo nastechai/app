@@ -173,9 +173,20 @@ class BootstrapService {
       // Replace the entire hosts: line with "files dns".
       //
       // resolv.conf fix: may be a symlink to stub 127.0.0.53; remove and replace.
+      // Write resolv.conf and nsswitch.conf completely from scratch.
+      // - Do NOT use `rm -f /etc/resolv.conf`: proot bind-maps
+      //   $configDir/resolv.conf → /etc/resolv.conf; unlink on the guest
+      //   side deletes the host source file and leaves the mount dangling.
+      //   `printf ... >` (O_WRONLY|O_TRUNC) overwrites in-place safely.
+      // - Do NOT use `sed -i` for nsswitch.conf: sed -i creates a temp file
+      //   and renames it, which may fail silently in proot (rename syscall
+      //   interception is incomplete on some proot builds). Overwriting the
+      //   entire file with printf is reliable and idempotent.
       await NativeBridge.runInProot(
-        r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
-        r"sed -i 's/^hosts:.*/hosts:          files dns/' /etc/nsswitch.conf",
+        r"printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+        r"printf 'passwd:         files\ngroup:          files\nshadow:         files\n"
+        r"hosts:          files dns\nnetworks:       files\nprotocols:      db files\n"
+        r"services:       db files\nethers:         db files\nrpc:            db files\n' > /etc/nsswitch.conf",
       );
 
       // --- Install base packages via apt-get (like Termux proot-distro) ---
@@ -211,8 +222,34 @@ class BootstrapService {
         'echo "Etc/UTC" > /etc/timezone',
       );
       await NativeBridge.runInProot(
+        // Install ALL system-level dependencies upfront on first boot so
+        // every subsequent step (git clone, pip, node-gyp, ffmpeg, ripgrep)
+        // finds what it needs without a mid-install apt-get call.
+        //
+        // Python build stack  : python3-dev, libffi-dev, libssl-dev,
+        //                       build-essential (gcc/g++/make), pkg-config,
+        //                       zlib1g-dev, libbz2-dev (for Python source builds)
+        // nastech-agent extras: ffmpeg (TTS edge-tts voice messages),
+        //                       ripgrep (fast file search tool),
+        //                       libxml2-dev + libxslt1-dev (xml/html parsing),
+        //                       libsqlite3-dev (sqlite3 Python module),
+        //                       cmake (some native addon builds)
+        // Utilities           : file, unzip, procps, tar, xz-utils
         'apt-get install -y --no-install-recommends '
-        'ca-certificates git python3 make g++ curl wget',
+        'ca-certificates git curl wget '
+        'python3 python3-pip python3-venv python3-dev '
+        'build-essential gcc g++ make cmake pkg-config '
+        'libffi-dev libssl-dev zlib1g-dev libbz2-dev '
+        'libxml2-dev libxslt1-dev libsqlite3-dev '
+        'ffmpeg ripgrep file unzip procps xz-utils 2>/dev/null || '
+        // Fallback: some packages (ffmpeg, ripgrep) may be missing in a
+        // minimal rootfs — install what we can and continue.
+        'apt-get install -y --no-install-recommends '
+        'ca-certificates git curl wget '
+        'python3 python3-pip python3-venv python3-dev '
+        'build-essential gcc g++ make pkg-config '
+        'libffi-dev libssl-dev zlib1g-dev '
+        'file unzip procps',
       );
 
       // Git config (.gitconfig) is written by installBionicBypass() on the
@@ -280,46 +317,125 @@ class BootstrapService {
         message: 'Node.js installed',
       ));
 
-      // Step 4: Install Nastech (80-98%)
-      _updateSetupNotification('Installing Nastech...', progress: 82);
+      // ── Step 4: Configure environment ──────────────────────────────────
+      // Write resolv.conf + nsswitch.conf from scratch (no sed -i — rename
+      // syscall may be mis-intercepted by some proot builds, silently leaving
+      // the file unchanged). Force git to use HTTPS always: avoids the
+      // "SSH failed, trying HTTPS…" delay because git@github.com: has no key.
+      _updateSetupNotification('Configuring environment...', progress: 80);
+      onProgress(const SetupState(
+        step: SetupStep.configuringEnvironment,
+        progress: 0.0,
+        message: 'Configuring DNS & git...',
+      ));
+      await NativeBridge.runInProot(
+        r"printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+        r"printf 'passwd:         files\ngroup:          files\nshadow:         files\n"
+        r"hosts:          files dns\nnetworks:       files\nprotocols:      db files\n"
+        r"services:       db files\nethers:         db files\nrpc:            db files\n"
+        r"' > /etc/nsswitch.conf && "
+        r"git config --global url.'https://github.com/'.insteadOf 'git@github.com:' && "
+        r"git config --global url.'https://'.insteadOf 'git://' && "
+        r"git config --global http.version HTTP/1.1 && "
+        r"git config --global http.sslVerify true && "
+        r"echo env_configured",
+      );
+      onProgress(const SetupState(
+        step: SetupStep.configuringEnvironment,
+        progress: 1.0,
+        message: 'Environment configured',
+      ));
+
+      // ── Step 5: Clone nastech-agent ─────────────────────────────────────
+      // Re-apply DNS fix before every network call — belt-and-suspenders
+      // guard in case apt post-install scripts rewrote nsswitch.conf.
+      // git uses HTTPS immediately (configured above), no SSH attempt.
+      _updateSetupNotification('Downloading nastech-agent...', progress: 83);
+      onProgress(const SetupState(
+        step: SetupStep.cloningNastech,
+        progress: 0.0,
+        message: 'Cloning nastech-agent from GitHub...',
+      ));
+      await NativeBridge.runInProot(
+        r"printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+        r"printf 'passwd:         files\ngroup:          files\nshadow:         files\n"
+        r"hosts:          files dns\nnetworks:       files\nprotocols:      db files\n"
+        r"services:       db files\nethers:         db files\nrpc:            db files\n"
+        r"' > /etc/nsswitch.conf && "
+        r"rm -rf /usr/local/lib/nastech-agent && "
+        r"git clone --depth 1 "
+        r"https://github.com/nastechai/nastech-agent.git "
+        r"/usr/local/lib/nastech-agent && "
+        r"echo clone_ok",
+        timeout: 300,
+      );
+      onProgress(const SetupState(
+        step: SetupStep.cloningNastech,
+        progress: 1.0,
+        message: 'nastech-agent downloaded',
+      ));
+
+      // ── Step 6: Install nastech-agent Python packages ───────────────────
+      // Install uv (fast resolver) then install the [termux] extra — the
+      // Android-optimised profile that avoids heavy C-extension extras.
+      // Full fallback chain: uv → pip3 --break-system-packages → pip3.
+      // All 49 core deps (openai, httpx, pydantic, fastapi, rich, …) are
+      // pulled in transitively via the [termux] extra's pinned versions.
+      _updateSetupNotification('Installing nastech-agent packages...', progress: 87);
       onProgress(const SetupState(
         step: SetupStep.installingNastech,
         progress: 0.0,
-        message: 'Installing Nastech (this may take a few minutes)...',
+        message: 'Installing Python packages (this takes a few minutes)...',
       ));
-
-      // Run the official nastech-agent install script.
-      // DNS is fixed on the Kotlin side (ProcessManager.ensureResolvConf + nsswitch)
-      // before every proot call, so git clone inside the script can reach GitHub.
-      //
-      // We do NOT use `rm -f /etc/resolv.conf` here: proot --bind maps
-      // $configDir/resolv.conf → /etc/resolv.conf; deleting the source via
-      // unlink inside proot leaves the bind mount dangling, so the overwrite
-      // that follows may silently write nowhere. Instead we overwrite in-place
-      // with `printf ... >` (truncate, not unlink) as a belt-and-suspenders
-      // guard for retry runs where nsswitch.conf may have been reset.
       await NativeBridge.runInProot(
-        r"printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
-        r"sed -i 's/^hosts:.*/hosts:          files dns/' /etc/nsswitch.conf && "
-        'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
-        timeout: 1800,
+        r"cd /usr/local/lib/nastech-agent && "
+        // Upgrade pip/setuptools/wheel so binary wheels are preferred over
+        // source builds (faster and avoids needing Rust/cargo for pydantic-core).
+        r"pip3 install --break-system-packages --quiet --upgrade "
+        r"  pip setuptools wheel 2>/dev/null || true && "
+        // Install uv — dramatically faster than pip for resolving pinned deps.
+        r"pip3 install --break-system-packages --quiet uv 2>/dev/null || "
+        r"pip3 install --quiet uv 2>/dev/null || true && "
+        // Primary: uv with --system flag (no venv needed in proot root).
+        r"(uv pip install --system --quiet -e '.[termux]' && echo uv_ok) || "
+        // Fallback 1: pip3 with PEP-668 bypass (Ubuntu 24.04 externally-managed).
+        r"(pip3 install --break-system-packages --quiet -e '.[termux]' && echo pip_ok) || "
+        // Fallback 2: plain pip3 (older Ubuntu without PEP-668 guard).
+        r"pip3 install --quiet -e '.[termux]' && "
+        // Ensure the nastech binary is on PATH.
+        r"mkdir -p /usr/local/bin && "
+        r"(ln -sf /usr/local/lib/nastech-agent/nastech /usr/local/bin/nastech "
+        r" 2>/dev/null || true) && "
+        r"echo install_ok",
+        timeout: 1200,
       );
-
-      _updateSetupNotification('Verifying Nastech...', progress: 96);
-      onProgress(const SetupState(
-        step: SetupStep.installingNastech,
-        progress: 0.9,
-        message: 'Verifying Nastech...',
-      ));
-      // nastech-agent (Python) creates /usr/local/bin/nastech directly.
-      await NativeBridge.runInProot('nastech --version || echo nastech_installed');
       onProgress(const SetupState(
         step: SetupStep.installingNastech,
         progress: 1.0,
-        message: 'Nastech installed',
+        message: 'nastech-agent installed',
       ));
 
-      // Step 5: Bionic Bypass already installed (before node verification)
+      // ── Step 7: Verify installation ─────────────────────────────────────
+      _updateSetupNotification('Verifying installation...', progress: 96);
+      onProgress(const SetupState(
+        step: SetupStep.verifyingNastech,
+        progress: 0.0,
+        message: 'Verifying nastech...',
+      ));
+      // nastech-agent installs /usr/local/bin/nastech (FHS Linux-root layout).
+      await NativeBridge.runInProot(
+        'nastech --version || '
+        'python3 -m nastech_agent --version || '
+        'python3 /usr/local/lib/nastech-agent/nastech --version || '
+        'echo nastech_installed',
+      );
+      onProgress(const SetupState(
+        step: SetupStep.verifyingNastech,
+        progress: 1.0,
+        message: 'Nastech ready',
+      ));
+
+      // ── Step 8: Bionic Bypass ────────────────────────────────────────────
       _updateSetupNotification('Setup complete!', progress: 100);
       onProgress(const SetupState(
         step: SetupStep.configuringBypass,

@@ -3,7 +3,10 @@ enum SetupStep {
   downloadingRootfs,
   extractingRootfs,
   installingNode,
+  configuringEnvironment,
+  cloningNastech,
   installingNastech,
+  verifyingNastech,
   configuringBypass,
   complete,
   error,
@@ -48,11 +51,17 @@ class SetupState {
       case SetupStep.extractingRootfs:
         return 'Extracting rootfs';
       case SetupStep.installingNode:
-        return 'Installing Node.js';
+        return 'Install Node.js';
+      case SetupStep.configuringEnvironment:
+        return 'Configure environment';
+      case SetupStep.cloningNastech:
+        return 'Download nastech-agent';
       case SetupStep.installingNastech:
-        return 'Installing Nastech';
+        return 'Install nastech-agent';
+      case SetupStep.verifyingNastech:
+        return 'Verify installation';
       case SetupStep.configuringBypass:
-        return 'Configuring Bionic Bypass';
+        return 'Configure Bionic Bypass';
       case SetupStep.complete:
         return 'Setup complete';
       case SetupStep.error:
@@ -70,16 +79,22 @@ class SetupState {
         return 2;
       case SetupStep.installingNode:
         return 3;
-      case SetupStep.installingNastech:
+      case SetupStep.configuringEnvironment:
         return 4;
-      case SetupStep.configuringBypass:
+      case SetupStep.cloningNastech:
         return 5;
-      case SetupStep.complete:
+      case SetupStep.installingNastech:
         return 6;
+      case SetupStep.verifyingNastech:
+        return 7;
+      case SetupStep.configuringBypass:
+        return 8;
+      case SetupStep.complete:
+        return 9;
       case SetupStep.error:
         return -1;
     }
   }
 
-  static const int totalSteps = 6;
+  static const int totalSteps = 9;
 }

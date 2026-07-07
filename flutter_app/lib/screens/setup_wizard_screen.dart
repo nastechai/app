@@ -167,8 +167,11 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       (1, 'Download Ubuntu rootfs', SetupStep.downloadingRootfs),
       (2, 'Extract rootfs', SetupStep.extractingRootfs),
       (3, 'Install Node.js', SetupStep.installingNode),
-      (4, 'Install Nastech', SetupStep.installingNastech),
-      (5, 'Configure Bionic Bypass', SetupStep.configuringBypass),
+      (4, 'Configure environment', SetupStep.configuringEnvironment),
+      (5, 'Download nastech-agent', SetupStep.cloningNastech),
+      (6, 'Install nastech-agent', SetupStep.installingNastech),
+      (7, 'Verify installation', SetupStep.verifyingNastech),
+      (8, 'Configure Bionic Bypass', SetupStep.configuringBypass),
     ];
 
     return ListView(
@@ -184,7 +187,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
           ),
         if (state.isComplete) ...[
           const ProgressStep(
-            stepNumber: 6,
+            stepNumber: 9,
             label: 'Setup complete!',
             isComplete: true,
           ),
