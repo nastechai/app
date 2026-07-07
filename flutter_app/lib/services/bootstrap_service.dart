@@ -150,6 +150,21 @@ class BootstrapService {
         'echo permissions_fixed',
       );
 
+      // --- Fix DNS before any apt-get calls ---
+      // Ubuntu 22.04's /etc/resolv.conf is a symlink →
+      //   ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
+      // systemd-resolved is not running in proot, so all glibc DNS fails.
+      // ProcessManager.ensureResolvConf() handles the symlink on the host
+      // side, but we also fix it inside proot so it survives across all
+      // subsequent commands (apt-get update, apt-get install, git clone).
+      // nsswitch.conf fix: "mdns4_minimal [NOTFOUND=return]" short-circuits
+      // glibc before reaching real DNS — affects git AND apt-get.
+      _updateSetupNotification('Fixing DNS...', progress: 47);
+      await NativeBridge.runInProot(
+        r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+        r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf",
+      );
+
       // --- Install base packages via apt-get (like Termux proot-distro) ---
       // Now that our proot matches Termux exactly (env -i, clean host env,
       // proper flags), dpkg works normally. No need for Java-side deb
