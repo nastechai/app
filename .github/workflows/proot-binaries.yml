@@ -1,0 +1,160 @@
+name: PRoot Binary Download Verification
+
+# Verifies that the Termux package URLs used by fetch-proot-binaries.sh are
+# still live and return valid .deb files for all three ABIs. Runs weekly and
+# on any script change to catch upstream package renames or removals before
+# they break a release build.
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'scripts/fetch-proot-binaries.sh'
+      - '.github/workflows/proot-binaries.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/fetch-proot-binaries.sh'
+  schedule:
+    # Weekly on Tuesday at 03:00 UTC
+    - cron: '0 3 * * 2'
+  workflow_dispatch:
+
+jobs:
+  verify-termux-repo:
+    name: Termux repo health (${{ matrix.deb_arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm64-v8a
+            deb_arch: aarch64
+          - abi: armeabi-v7a
+            deb_arch: arm
+          - abi: x86_64
+            deb_arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get install -y -qq curl binutils file
+
+      - name: Check Termux package index reachable
+        run: |
+          REPO="https://packages.termux.dev/apt/termux-main"
+          ARCH="${{ matrix.deb_arch }}"
+          INDEX_URL="${REPO}/dists/stable/main/binary-${ARCH}/Packages"
+
+          echo "Fetching package index: $INDEX_URL"
+          if curl -fsSL --max-time 30 "$INDEX_URL" -o /tmp/pkg-index.txt; then
+            LINES=$(wc -l < /tmp/pkg-index.txt)
+            echo "✓ Index fetched ($LINES lines)"
+          else
+            echo "ERROR: Failed to fetch Termux package index for $ARCH"
+            exit 1
+          fi
+
+      - name: Verify proot package is in index
+        run: |
+          ARCH="${{ matrix.deb_arch }}"
+          for pkg in proot libtalloc; do
+            if grep -q "^Package: ${pkg}$" /tmp/pkg-index.txt; then
+              VERSION=$(grep -A 5 "^Package: ${pkg}$" /tmp/pkg-index.txt | grep "^Version:" | head -1)
+              FILENAME=$(grep -A 20 "^Package: ${pkg}$" /tmp/pkg-index.txt | grep "^Filename:" | head -1)
+              echo "✓ $pkg found — $VERSION — $FILENAME"
+            else
+              echo "ERROR: $pkg not found in Termux repo index for $ARCH"
+              exit 1
+            fi
+          done
+
+      - name: Download and verify proot .deb
+        run: |
+          REPO="https://packages.termux.dev/apt/termux-main"
+          ARCH="${{ matrix.deb_arch }}"
+
+          for pkg in proot libtalloc; do
+            FILENAME=$(grep -A 20 "^Package: ${pkg}$" /tmp/pkg-index.txt \
+              | grep "^Filename:" | head -1 | awk '{print $2}')
+            URL="${REPO}/${FILENAME}"
+
+            echo "Downloading: $URL"
+            if curl -fsSL --max-time 120 "$URL" -o "/tmp/${pkg}-${ARCH}.deb"; then
+              SIZE=$(stat -c%s "/tmp/${pkg}-${ARCH}.deb")
+              echo "✓ $pkg downloaded (${SIZE} bytes)"
+
+              # Verify it's a valid Debian archive
+              if file "/tmp/${pkg}-${ARCH}.deb" | grep -q "Debian binary package"; then
+                echo "✓ $pkg is a valid Debian binary package"
+              else
+                echo "WARN: $pkg may not be a valid .deb ($(file /tmp/${pkg}-${ARCH}.deb))"
+              fi
+            else
+              echo "ERROR: Failed to download $pkg for $ARCH from $URL"
+              exit 1
+            fi
+          done
+
+      - name: Extract and verify proot binary
+        run: |
+          ARCH="${{ matrix.deb_arch }}"
+          mkdir -p /tmp/proot-extract-$ARCH
+          cd /tmp/proot-extract-$ARCH
+
+          ar x /tmp/proot-${ARCH}.deb
+          if [ -f data.tar.xz ]; then
+            tar xf data.tar.xz
+          elif [ -f data.tar.gz ]; then
+            tar xf data.tar.gz
+          else
+            tar xf data.tar.* 2>/dev/null
+          fi
+
+          PROOT_BIN=$(find . -name "proot" -o -name "proot.so" | head -1)
+          if [ -n "$PROOT_BIN" ]; then
+            echo "✓ proot binary found: $PROOT_BIN"
+            echo "  $(file $PROOT_BIN)"
+            echo "  Size: $(stat -c%s $PROOT_BIN) bytes"
+          else
+            echo "ERROR: proot binary not found in .deb"
+            ls -la data/usr/ 2>/dev/null || find . -type f | head -20
+            exit 1
+          fi
+
+  full-fetch-test:
+    name: Full fetch-proot-binaries.sh test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies for fetch script
+        run: sudo apt-get install -y curl binutils zstd
+
+      - name: Run fetch-proot-binaries.sh
+        run: bash scripts/fetch-proot-binaries.sh
+        timeout-minutes: 10
+
+      - name: Verify all output files
+        run: |
+          FAILED=0
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            echo "=== $abi ==="
+            for lib in libproot.so libprootloader.so libandroid-shmem.so libtalloc.so; do
+              FILE="flutter_app/android/app/src/main/jniLibs/${abi}/${lib}"
+              if [ -f "$FILE" ]; then
+                SIZE=$(stat -c%s "$FILE")
+                echo "  ✓ $lib (${SIZE} bytes)"
+              else
+                echo "  ✗ MISSING: $lib"
+                FAILED=1
+              fi
+            done
+          done
+          [ "$FAILED" -eq 0 ] || exit 1
+
+      - name: Upload binaries as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: proot-binaries-verified
+          path: flutter_app/android/app/src/main/jniLibs/
+          retention-days: 7

@@ -1,23 +1,59 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/'
+  # npm (Node.js CLI package)
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: 'weekly'
-    commit-message:
-      prefix: 'deps'
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: UTC
     open-pull-requests-limit: 10
-    groups:
-      minor-and-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
-
-  - package-ecosystem: 'github-actions'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
+    labels:
+      - dependencies
+      - nodejs
     commit-message:
-      prefix: 'ci'
+      prefix: deps
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:30"
+      timezone: UTC
+    open-pull-requests-limit: 15
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: ci(deps)
+    groups:
+      actions-patch:
+        update-types:
+          - patch
+      actions-minor:
+        update-types:
+          - minor
+
+  # Flutter / pub.dev
+  - package-ecosystem: pub
+    directory: /flutter_app
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "09:00"
+      timezone: UTC
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - flutter
+    commit-message:
+      prefix: deps(flutter)

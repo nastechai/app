@@ -1,0 +1,188 @@
+name: Android Compatibility Check
+
+# Verifies the Android project targets correct SDK levels, NDK version is
+# present, all proot binaries exist for every ABI, and the Kotlin code
+# references the right native library names. Runs on every change that
+# touches Android-specific files.
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'flutter_app/android/**'
+      - 'flutter_app/lib/**'
+      - 'scripts/fetch-proot-binaries.sh'
+      - '.github/workflows/android-compat.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'flutter_app/android/**'
+      - 'flutter_app/lib/**'
+      - 'scripts/fetch-proot-binaries.sh'
+  schedule:
+    # Weekly check — catches upstream proot/Termux package changes
+    - cron: '0 4 * * 2'
+  workflow_dispatch:
+
+jobs:
+  sdk-levels:
+    name: SDK Level Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check minSdk / targetSdk / compileSdk
+        run: |
+          echo "=== build.gradle SDK levels ==="
+          grep -rE "minSdk|targetSdk|compileSdk" flutter_app/android/ --include="*.gradle" | tee /tmp/sdk-levels.txt
+
+          MIN=$(grep -m1 "minSdkVersion" /tmp/sdk-levels.txt | grep -oE '[0-9]+' || \
+                grep -m1 "minSdk" /tmp/sdk-levels.txt | grep -oE '[0-9]+' | head -1)
+          echo "Detected minSdk: ${MIN:-unknown}"
+
+          if [ -n "$MIN" ] && [ "$MIN" -lt 29 ]; then
+            echo "ERROR: minSdk $MIN is below Android 10 (API 29)."
+            echo "proot requires Android 10+ for W^X+shmem support."
+            exit 1
+          fi
+          echo "✓ minSdk >= 29 (Android 10)"
+
+      - name: Check NDK version is specified
+        run: |
+          if grep -qr "ndkVersion" flutter_app/android/ --include="*.gradle"; then
+            echo "✓ ndkVersion is pinned:"
+            grep -r "ndkVersion" flutter_app/android/ --include="*.gradle"
+          else
+            echo "WARN: ndkVersion not explicitly pinned — builds may be non-reproducible"
+          fi
+
+      - name: Check Android namespace declaration
+        run: |
+          if grep -qr 'namespace\s*=' flutter_app/android/app/build.gradle; then
+            echo "✓ namespace declared (AGP 8.x compatible)"
+          else
+            echo "WARN: namespace not declared in build.gradle (required for AGP 8+)"
+          fi
+
+  proot-binaries:
+    name: PRoot Binary Health (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm64-v8a
+            deb_arch: aarch64
+          - abi: armeabi-v7a
+            deb_arch: arm
+          - abi: x86_64
+            deb_arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get install -y -qq curl binutils file
+
+      - name: Fetch proot binaries for ${{ matrix.abi }}
+        run: bash scripts/fetch-proot-binaries.sh
+        env:
+          TARGET_ABI: ${{ matrix.abi }}
+        continue-on-error: true
+
+      - name: Verify binary existence and sanity
+        run: |
+          ABI="${{ matrix.abi }}"
+          JNILIBS="flutter_app/android/app/src/main/jniLibs"
+          FAILED=0
+
+          for lib in libproot.so libprootloader.so libandroid-shmem.so libtalloc.so; do
+            FILE="$JNILIBS/$ABI/$lib"
+            if [ ! -f "$FILE" ]; then
+              echo "MISSING: $FILE"
+              FAILED=1
+              continue
+            fi
+            SIZE=$(stat -c%s "$FILE")
+            if [ "$SIZE" -lt 1024 ]; then
+              echo "SUSPICIOUSLY SMALL: $FILE (${SIZE} bytes)"
+              FAILED=1
+              continue
+            fi
+            TYPE=$(file "$FILE")
+            echo "OK: $lib ($SIZE bytes) — $TYPE"
+          done
+
+          [ "$FAILED" -eq 0 ] || { echo "One or more binaries are missing or invalid."; exit 1; }
+
+      - name: Verify proot is ELF for correct arch
+        run: |
+          ABI="${{ matrix.abi }}"
+          PROOT="flutter_app/android/app/src/main/jniLibs/$ABI/libproot.so"
+          if [ -f "$PROOT" ]; then
+            ARCH=$(file "$PROOT")
+            echo "proot ELF type: $ARCH"
+            case "$ABI" in
+              arm64-v8a)   echo "$ARCH" | grep -q "aarch64\|ARM aarch64" && echo "✓ arch matches" || echo "WARN: unexpected arch" ;;
+              armeabi-v7a) echo "$ARCH" | grep -q "ARM" && echo "✓ arch matches" || echo "WARN: unexpected arch" ;;
+              x86_64)      echo "$ARCH" | grep -q "x86-64" && echo "✓ arch matches" || echo "WARN: unexpected arch" ;;
+            esac
+          fi
+
+  ld-preload-check:
+    name: LD_PRELOAD Config Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify libandroid-shmem.so is referenced in ProcessManager
+        run: |
+          if grep -q "libandroid-shmem" flutter_app/android/app/src/main/kotlin/com/nxg/nastechproot/ProcessManager.kt; then
+            echo "✓ libandroid-shmem.so referenced in ProcessManager.kt"
+            grep "libandroid-shmem" flutter_app/android/app/src/main/kotlin/com/nxg/nastechproot/ProcessManager.kt
+          else
+            echo "ERROR: libandroid-shmem.so not found in ProcessManager.kt — LD_PRELOAD fix missing"
+            exit 1
+          fi
+
+          if grep -q "LD_PRELOAD" flutter_app/android/app/src/main/kotlin/com/nxg/nastechproot/ProcessManager.kt; then
+            echo "✓ LD_PRELOAD set in ProcessManager.kt"
+          else
+            echo "ERROR: LD_PRELOAD not set — proot will fail on Android 10+"
+            exit 1
+          fi
+
+      - name: Verify setupShmem is called from setupDirectories
+        run: |
+          if grep -q "setupShmem" flutter_app/android/app/src/main/kotlin/com/nxg/nastechproot/BootstrapManager.kt; then
+            echo "✓ setupShmem() present in BootstrapManager.kt"
+          else
+            echo "ERROR: setupShmem() not found — libandroid-shmem.so won't be copied to app-writable dir"
+            exit 1
+          fi
+
+  kotlin-android-checks:
+    name: Kotlin Android Source Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded paths that should use filesDir
+        run: |
+          ISSUES=0
+          # Grep for hardcoded /data/data paths (should use context.filesDir)
+          if grep -rn '"/data/data' flutter_app/android/app/src/main/kotlin/ 2>/dev/null; then
+            echo "WARN: Hardcoded /data/data path found — use context.filesDir instead"
+            ISSUES=1
+          fi
+          # Check for Thread.sleep in main thread (should use coroutines)
+          if grep -rn "Thread.sleep" flutter_app/android/app/src/main/kotlin/ 2>/dev/null | grep -v "test"; then
+            echo "WARN: Thread.sleep() found — consider using coroutine delay()"
+          fi
+          echo "Kotlin source checks done (ISSUES=$ISSUES)"
+
+      - name: Check jniLibs are declared in build.gradle
+        run: |
+          if grep -q "jniLibs\|jni" flutter_app/android/app/build.gradle; then
+            echo "✓ jniLibs referenced in build.gradle"
+          else
+            echo "WARN: jniLibs not explicitly configured — using default src/main/jniLibs"
+          fi

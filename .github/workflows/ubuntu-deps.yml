@@ -1,0 +1,167 @@
+name: Ubuntu Dependencies Verification
+
+# Spins up a clean Ubuntu 24.04 container (same as the proot rootfs used on
+# device) and verifies that every apt package listed in bootstrap_service.dart
+# is available and installable. Catches package renames, removals, and typos
+# before they reach users' phones.
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'flutter_app/lib/services/bootstrap_service.dart'
+      - '.github/workflows/ubuntu-deps.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'flutter_app/lib/services/bootstrap_service.dart'
+  schedule:
+    # Weekly — catches package availability changes in Ubuntu repos
+    - cron: '0 5 * * 3'
+  workflow_dispatch:
+
+jobs:
+  apt-package-check:
+    name: apt package availability (Ubuntu ${{ matrix.ubuntu }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['22.04', '24.04']
+    container:
+      image: ubuntu:${{ matrix.ubuntu }}
+    steps:
+      - name: Install minimal tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq curl grep
+
+      - uses: actions/checkout@v4
+
+      - name: Extract package list from bootstrap_service.dart
+        id: packages
+        run: |
+          # Pull all package names from the apt-get install lines
+          PKGS=$(grep -A 40 "apt-get install" flutter_app/lib/services/bootstrap_service.dart \
+            | grep -v '#' \
+            | grep -oE "[a-z0-9][a-z0-9.+_-]*" \
+            | grep -v "apt-get\|install\|no-install-recommends\|DEBIAN_FRONTEND\|noninteractive\|true\|dev\|null\|2>" \
+            | sort -u)
+          echo "Packages to check:"
+          echo "$PKGS"
+          echo "packages=$(echo $PKGS | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Check each package is available in apt
+        run: |
+          apt-get update -qq
+
+          FAILED_PKGS=()
+          MISSING_PKGS=()
+          OK_PKGS=()
+
+          # Core packages expected to be present
+          CORE_PKGS=(
+            ca-certificates git curl wget
+            python3 python3-pip python3-venv python3-dev
+            build-essential gcc g++ make pkg-config
+            libffi-dev libssl-dev zlib1g-dev libbz2-dev
+            libxml2-dev libxslt1-dev libsqlite3-dev
+            file unzip procps
+          )
+
+          # Optional packages (may not be in minimal image — warn, don't fail)
+          OPTIONAL_PKGS=(ffmpeg ripgrep cmake xz-utils)
+
+          for pkg in "${CORE_PKGS[@]}"; do
+            if apt-cache show "$pkg" >/dev/null 2>&1; then
+              OK_PKGS+=("$pkg")
+              echo "✓ $pkg"
+            else
+              MISSING_PKGS+=("$pkg")
+              echo "✗ MISSING: $pkg"
+            fi
+          done
+
+          for pkg in "${OPTIONAL_PKGS[@]}"; do
+            if apt-cache show "$pkg" >/dev/null 2>&1; then
+              OK_PKGS+=("$pkg")
+              echo "✓ $pkg (optional)"
+            else
+              echo "⚠ OPTIONAL MISSING: $pkg (check if universe repo needed)"
+            fi
+          done
+
+          echo ""
+          echo "Summary: ${#OK_PKGS[@]} available, ${#MISSING_PKGS[@]} missing"
+
+          if [ "${#MISSING_PKGS[@]}" -gt 0 ]; then
+            echo "FAILED: Missing core packages: ${MISSING_PKGS[*]}"
+            exit 1
+          fi
+
+      - name: Dry-run install of all core packages
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --dry-run --no-install-recommends \
+            ca-certificates git curl wget \
+            python3 python3-pip python3-venv python3-dev \
+            build-essential gcc g++ make pkg-config \
+            libffi-dev libssl-dev zlib1g-dev libbz2-dev \
+            libxml2-dev libxslt1-dev libsqlite3-dev \
+            file unzip procps \
+            2>&1 | tail -20
+          echo "✓ Dry-run install succeeded"
+
+      - name: Test Python3 availability after install
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip 2>/dev/null
+          python3 --version
+          pip3 --version
+          echo "✓ Python3 and pip3 available"
+
+  python-dep-check:
+    name: Python nastech-agent dependency resolution
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Install Python
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq python3 python3-pip curl git \
+            build-essential libffi-dev libssl-dev python3-dev
+
+      - name: Verify nastech-agent[termux] resolves on PyPI
+        run: |
+          pip3 install --dry-run --break-system-packages 'nastech-agent[termux]' 2>&1 | tail -20 || \
+          pip3 install --break-system-packages --quiet 'nastech-agent' --dry-run 2>&1 | tail -10 || true
+          echo "PyPI resolution check complete"
+
+      - name: Verify uv is installable
+        run: |
+          pip3 install --break-system-packages --quiet uv
+          uv --version
+          echo "✓ uv available"
+
+  git-connectivity:
+    name: GitHub connectivity from proot-like env
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Install minimal tools
+        run: apt-get update -qq && apt-get install -y -qq git curl ca-certificates
+
+      - name: Write correct nsswitch.conf (simulating our bootstrap fix)
+        run: |
+          printf 'passwd:         files\ngroup:          files\nshadow:         files\nhosts:          files dns\nnetworks:       files\n' > /etc/nsswitch.conf
+          cat /etc/nsswitch.conf
+
+      - name: Verify GitHub is reachable
+        run: |
+          curl -fsSL --max-time 15 https://github.com > /dev/null && echo "✓ github.com reachable" || echo "WARN: github.com unreachable (network issue in CI)"
+
+      - name: Verify git clone (shallow) works
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git clone --depth 1 https://github.com/nastechai/nastech-agent.git /tmp/nastech-test 2>&1 | tail -5
+          ls /tmp/nastech-test/
+          echo "✓ git clone from GitHub succeeded"

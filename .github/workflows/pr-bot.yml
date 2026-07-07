@@ -1,0 +1,226 @@
+name: PR Bot
+
+# Runs on every PR event AND on a schedule so open PRs get checked
+# automatically even if no new push arrives.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, ready_for_review, reopened]
+  schedule:
+    # Every 10 minutes — checks all open PRs for stale reviews, size labels,
+    # title format, and missing descriptions.
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  # ── Label PRs by diff size ───────────────────────────────────────────────
+  size-label:
+    name: Size Label
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate diff size and apply label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+
+            let sizeLabel;
+            if (total < 10)        sizeLabel = 'size/XS';
+            else if (total < 50)   sizeLabel = 'size/S';
+            else if (total < 200)  sizeLabel = 'size/M';
+            else if (total < 500)  sizeLabel = 'size/L';
+            else                   sizeLabel = 'size/XL';
+
+            // Ensure all size labels exist
+            const sizeLabels = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL'];
+            const colors      = ['0e8a16',  '84b6eb', 'fbca04', 'e4e669', 'ee0701'];
+            for (let i = 0; i < sizeLabels.length; i++) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  name: sizeLabels[i], color: colors[i],
+                });
+              } catch (_) {}  // label already exists
+            }
+
+            // Remove old size labels
+            for (const lbl of sizeLabels) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number, name: lbl,
+                });
+              } catch (_) {}
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [sizeLabel],
+            });
+            console.log(`PR #${pr.number}: ${total} lines changed → ${sizeLabel}`);
+
+  # ── Title format check (Conventional Commits) ───────────────────────────
+  title-check:
+    name: PR Title Format
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            // Conventional Commits: type(scope)?: description
+            const ccPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\(.+\))?: .{3,}/;
+            if (!ccPattern.test(title)) {
+              const body = [
+                '## ⚠️ PR Title Format',
+                '',
+                `The PR title \`${title}\` does not follow [Conventional Commits](https://www.conventionalcommits.org/).`,
+                '',
+                '**Expected format:** `type(scope)?: description`',
+                '',
+                '**Examples:**',
+                '- `fix(android): prevent proot shmem crash on API 30`',
+                '- `feat(setup): add granular install steps`',
+                '- `ci: add ubuntu deps verification workflow`',
+                '',
+                '**Valid types:** `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert` `deps`',
+              ].join('\n');
+
+              // Post or update bot comment
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+              const botComment = comments.data.find(c =>
+                c.user.type === 'Bot' && c.body.includes('PR Title Format'));
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  comment_id: botComment.id, body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number, body,
+                });
+              }
+              core.setFailed(`PR title does not follow Conventional Commits: "${title}"`);
+            } else {
+              core.info(`PR title OK: "${title}"`);
+            }
+
+  # ── Welcome new contributors ─────────────────────────────────────────────
+  welcome:
+    name: Welcome New Contributors
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const creator = context.payload.pull_request.user.login;
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'all', per_page: 100,
+            });
+            const previous = prs.filter(p =>
+              p.user.login === creator &&
+              p.number !== context.payload.pull_request.number
+            );
+            if (previous.length === 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: [
+                  `👋 Welcome @${creator} — thanks for your first PR to **nastech**!`,
+                  '',
+                  'A maintainer will review your changes shortly. In the meantime:',
+                  '- Make sure CI checks are all green',
+                  '- PR title should follow [Conventional Commits](https://www.conventionalcommits.org/)',
+                  '- For Android changes, test on a physical device if possible',
+                ].join('\n'),
+              });
+            }
+
+  # ── Check for missing description ────────────────────────────────────────
+  description-check:
+    name: PR Description Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            if (body.trim().length < 20) {
+              core.warning('PR has no description. Please describe what this PR does.');
+            }
+
+  # ── Scheduled: ping stale PRs waiting for review ─────────────────────────
+  ping-reviewers:
+    name: Ping Stale PRs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', per_page: 50,
+            });
+
+            const now = Date.now();
+            const THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+            for (const pr of prs) {
+              if (pr.draft) continue;
+              const updated = new Date(pr.updated_at).getTime();
+              const ageHours = (now - updated) / 3600000;
+
+              if (ageHours < 24) continue;
+
+              // Check if already has a review
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner, repo: context.repo.repo,
+                pull_number: pr.number,
+              });
+              if (reviews.length > 0) continue;
+
+              // Check if we've already pinged in the last 24h
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: pr.number, per_page: 20,
+              });
+              const recentPing = comments.find(c => {
+                const age = (now - new Date(c.created_at).getTime()) / 3600000;
+                return c.user.type === 'Bot' && c.body.includes('waiting for review') && age < 24;
+              });
+              if (recentPing) continue;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `⏰ PR #${pr.number} has been waiting for review for ${Math.round(ageHours)}h. @${pr.user.login} — is this still ready for review?`,
+              });
+              console.log(`Pinged PR #${pr.number} (waiting ${Math.round(ageHours)}h)`);
+            }

@@ -1,0 +1,64 @@
+name: Kotlin Lint (ktlint)
+
+# Lints all Kotlin files in the Android project using ktlint.
+# ktlint enforces the official Kotlin style guide with no configuration required.
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '**/*.kt'
+      - '.github/workflows/kotlin-lint.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.kt'
+  workflow_dispatch:
+
+jobs:
+  ktlint:
+    name: ktlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download ktlint
+        run: |
+          KTLINT_VERSION="1.3.1"
+          curl -sSLO "https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint"
+          chmod +x ktlint
+
+      - name: List Kotlin files
+        run: find flutter_app/android -name "*.kt" | sort
+
+      - name: Run ktlint check
+        run: |
+          # Run on all .kt files in the android project
+          find flutter_app/android -name "*.kt" -print0 | \
+            xargs -0 ./ktlint --reporter=plain --relative 2>&1 | tee /tmp/ktlint-output.txt
+          EXIT_CODE=${PIPESTATUS[1]}
+          VIOLATIONS=$(grep -c ":.*:" /tmp/ktlint-output.txt 2>/dev/null || echo 0)
+          echo ""
+          echo "ktlint found $VIOLATIONS violation(s)"
+          exit $EXIT_CODE
+        continue-on-error: true  # Warn only until codebase is fully compliant
+
+      - name: Upload ktlint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktlint-report
+          path: /tmp/ktlint-output.txt
+          if-no-files-found: ignore
+
+      - name: Annotate violations as warnings
+        if: always()
+        run: |
+          if [ -s /tmp/ktlint-output.txt ]; then
+            while IFS= read -r line; do
+              # Format: path/File.kt:line:col: error: message
+              FILE=$(echo "$line" | cut -d: -f1)
+              LINE=$(echo "$line" | cut -d: -f2)
+              MSG=$(echo "$line" | cut -d: -f4-)
+              echo "::warning file=${FILE},line=${LINE}::${MSG}"
+            done < /tmp/ktlint-output.txt
+          fi

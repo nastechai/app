@@ -2,7 +2,7 @@ name: Build Nastech Apps
 
 on:
   push:
-    branches: ['*']
+    branches: ['**']
     paths:
       - 'flutter_app/**'
       - 'scripts/fetch-proot-binaries.sh'

@@ -1,0 +1,53 @@
+# GitHub Labeler configuration for auto-label.yml
+# Maps labels to path globs — PRs touching these paths get these labels.
+
+android:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'flutter_app/android/**'
+      - 'scripts/fetch-proot-binaries.sh'
+
+flutter:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'flutter_app/lib/**'
+      - 'flutter_app/pubspec.yaml'
+      - 'flutter_app/pubspec.lock'
+
+kotlin:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.kt'
+
+nodejs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/**'
+      - 'bin/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.md'
+      - 'docs/**'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'flutter_app/pubspec.yaml'
+      - 'flutter_app/pubspec.lock'
+
+setup:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'flutter_app/lib/services/bootstrap_service.dart'
+      - 'scripts/**'
