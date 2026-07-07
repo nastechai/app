@@ -259,9 +259,19 @@ class BootstrapService {
         progress: 0.0,
         message: 'Installing Nastech (this may take a few minutes)...',
       ));
+
+      // Fix Ubuntu's nsswitch.conf: the default "mdns4_minimal [NOTFOUND=return]"
+      // entry short-circuits glibc DNS resolution before reaching real nameservers.
+      // curl has its own resolver (c-ares) and works fine, but git uses glibc NSS
+      // and cannot resolve github.com without this fix.
+      await NativeBridge.runInProot(
+        r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf; "
+        "grep hosts /etc/nsswitch.conf",
+      );
+
       // Install nastech — fork/exec works now with our Termux-matching proot.
       await NativeBridge.runInProot(
-        'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash',
+        'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
         timeout: 1800,
       );
 
