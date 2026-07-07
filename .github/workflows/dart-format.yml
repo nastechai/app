@@ -1,0 +1,39 @@
+name: Dart Format Check
+
+on:
+  push:
+    branches: [main, 'release/**', 'hotfix/**', 'feature/**']
+    paths:
+      - 'flutter_app/lib/**'
+      - 'flutter_app/test/**'
+      - '.github/workflows/dart-format.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: Dart Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Check Dart formatting
+        working-directory: flutter_app
+        run: |
+          dart format --set-exit-if-changed lib/ test/ 2>/dev/null || \
+          dart format --output=none --set-exit-if-changed lib/
+
+      - name: Show formatting diff (if failed)
+        if: failure()
+        working-directory: flutter_app
+        run: |
+          dart format --output=show lib/ test/ 2>/dev/null || \
+          dart format --output=show lib/

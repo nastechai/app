@@ -36,6 +36,9 @@ class BootstrapManager(
         // as libtalloc.so (jniLibs naming convention). Create a copy with the
         // correct SONAME so the dynamic linker finds it.
         setupLibtalloc()
+        // Copy libandroid-shmem.so to libDir so LD_LIBRARY_PATH finds it
+        // and LD_PRELOAD can inject it before proot's dynamic linking.
+        setupShmem()
         // Create fake /proc and /sys files for proot bind mounts
         setupFakeSysdata()
     }
@@ -43,6 +46,24 @@ class BootstrapManager(
     private fun setupLibtalloc() {
         val source = File("$nativeLibDir/libtalloc.so")
         val target = File("$libDir/libtalloc.so.2")
+        if (source.exists() && !target.exists()) {
+            source.copyTo(target)
+            target.setExecutable(true)
+        }
+    }
+
+    /**
+     * Copy libandroid-shmem.so to the app's writable lib directory.
+     * proot (libproot.so) has libandroid-shmem.so as a DT_NEEDED dependency.
+     * On Android 10+ bionic may not search LD_LIBRARY_PATH for DT_NEEDED libs
+     * when executing an ELF directly (namespace isolation / W^X policy).
+     * Having the lib in both nativeLibDir (APK extraction) AND libDir (our copy)
+     * maximises the chance the dynamic linker finds it via LD_LIBRARY_PATH.
+     * ProcessManager.prootEnv() also sets LD_PRELOAD to force-inject it.
+     */
+    private fun setupShmem() {
+        val source = File("$nativeLibDir/libandroid-shmem.so")
+        val target = File("$libDir/libandroid-shmem.so")
         if (source.exists() && !target.exists()) {
             source.copyTo(target)
             target.setExecutable(true)

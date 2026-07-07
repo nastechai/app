@@ -1,2 +1,3 @@
 - [Ubuntu proot DNS fix](ubuntu-proot-dns.md) — /etc/resolv.conf is a symlink to systemd-resolved stub; must delete symlink before writing real nameservers, and fix nsswitch mDNS entry for git.
 - [nastech-agent install path](nastech-agent-install.md) — Python installer puts binary at /usr/local/bin/nastech (not npm node_modules); check that path, not package.json.
+- [Nastech proot install fixes](proot-install-fixes.md) — libandroid-shmem needs LD_PRELOAD (not just LD_LIBRARY_PATH); nsswitch.conf must be patched host-side; never rm -f a proot bind-mount source.

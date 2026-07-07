@@ -1,0 +1,58 @@
+name: Flutter Tests
+
+on:
+  push:
+    branches: [main, 'release/**', 'hotfix/**', 'feature/**']
+    paths:
+      - 'flutter_app/lib/**'
+      - 'flutter_app/test/**'
+      - 'flutter_app/pubspec.yaml'
+      - 'flutter_app/pubspec.lock'
+      - '.github/workflows/flutter-test.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Flutter Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            flutter_app/.dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('flutter_app/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Get dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Run unit tests
+        working-directory: flutter_app
+        run: |
+          if [ -d "test" ] && [ "$(ls -A test 2>/dev/null)" ]; then
+            flutter test --coverage
+          else
+            echo "No tests found — skipping"
+          fi
+
+      - name: Upload coverage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: flutter_app/coverage/lcov.info
+          if-no-files-found: ignore

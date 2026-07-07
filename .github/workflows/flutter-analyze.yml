@@ -1,0 +1,49 @@
+name: Flutter Analyze
+
+on:
+  push:
+    branches: [main, 'release/**', 'hotfix/**', 'feature/**']
+    paths:
+      - 'flutter_app/lib/**'
+      - 'flutter_app/test/**'
+      - 'flutter_app/pubspec.yaml'
+      - 'flutter_app/pubspec.lock'
+      - '.github/workflows/flutter-analyze.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Dart Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            flutter_app/.dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('flutter_app/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Get dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Run flutter analyze
+        working-directory: flutter_app
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Check for outdated constraints
+        working-directory: flutter_app
+        run: flutter pub outdated --json || true

@@ -289,9 +289,17 @@ class BootstrapService {
       ));
 
       // Run the official nastech-agent install script.
-      // DNS was already fixed by the step above; repeat here for retry runs.
+      // DNS is fixed on the Kotlin side (ProcessManager.ensureResolvConf + nsswitch)
+      // before every proot call, so git clone inside the script can reach GitHub.
+      //
+      // We do NOT use `rm -f /etc/resolv.conf` here: proot --bind maps
+      // $configDir/resolv.conf → /etc/resolv.conf; deleting the source via
+      // unlink inside proot leaves the bind mount dangling, so the overwrite
+      // that follows may silently write nowhere. Instead we overwrite in-place
+      // with `printf ... >` (truncate, not unlink) as a belt-and-suspenders
+      // guard for retry runs where nsswitch.conf may have been reset.
       await NativeBridge.runInProot(
-        r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
+        r"printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf && "
         r"sed -i 's/^hosts:.*/hosts:          files dns/' /etc/nsswitch.conf && "
         'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
         timeout: 1800,

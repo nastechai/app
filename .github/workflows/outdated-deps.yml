@@ -1,0 +1,66 @@
+name: Outdated Dependencies
+
+on:
+  schedule:
+    # Run every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  npm-outdated:
+    name: npm Outdated Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check outdated npm packages
+        # `npm outdated` exits 1 when packages are outdated; capture output
+        # for the step summary but don't fail the workflow.
+        run: |
+          echo "## Outdated npm Packages" >> "$GITHUB_STEP_SUMMARY"
+          npm outdated --long || {
+            echo "Some packages are outdated (see above). Run \`npm update\` to update within semver bounds." >> "$GITHUB_STEP_SUMMARY"
+            true
+          }
+
+      - name: Save outdated report as JSON
+        run: npm outdated --json > npm-outdated.json 2>/dev/null || true
+
+      - name: Upload outdated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-outdated-report
+          path: npm-outdated.json
+          if-no-files-found: ignore
+
+  flutter-outdated:
+    name: Flutter Outdated Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Check outdated Flutter packages
+        working-directory: flutter_app
+        run: |
+          echo "## Outdated Flutter Packages" >> "$GITHUB_STEP_SUMMARY"
+          flutter pub outdated 2>/dev/null || true

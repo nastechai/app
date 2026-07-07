@@ -1,0 +1,57 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main, 'release/**']
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/security-audit.yml'
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  npm-audit:
+    name: npm Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+  python-audit:
+    name: Python Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      # Install the actual package so pip-audit has real deps to scan.
+      # nastech-agent[termux] is the package installed on devices; audit its
+      # transitive dependency tree for known CVEs.
+      - name: Install nastech-agent for auditing
+        run: pip install 'nastech-agent[termux]' || pip install nastech-agent || true
+
+      - name: Audit installed Python packages
+        run: pip-audit --desc on

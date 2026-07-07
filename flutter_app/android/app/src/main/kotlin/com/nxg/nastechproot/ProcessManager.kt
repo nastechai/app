@@ -42,9 +42,18 @@ class ProcessManager(
         // Loader executables for proot's execve interception
         "PROOT_LOADER" to "$nativeLibDir/libprootloader.so",
         "PROOT_LOADER_32" to "$nativeLibDir/libprootloader32.so",
-        // LD_LIBRARY_PATH: proot itself needs libtalloc.so.2
+        // LD_LIBRARY_PATH: proot needs libtalloc.so.2 and libandroid-shmem.so
         // This does NOT leak into the guest (env -i cleans it)
         "LD_LIBRARY_PATH" to "$libDir:$nativeLibDir",
+        // LD_PRELOAD: force-load libandroid-shmem.so before proot starts.
+        // On Android 10+ bionic may not search LD_LIBRARY_PATH for DT_NEEDED
+        // deps of a directly-executed ELF (W^X namespace isolation).
+        // LD_PRELOAD injects the library unconditionally, making shm_open/
+        // shm_unlink available without relying on the dynamic linker search path.
+        // We list both locations (colon-separated) so the linker finds it even
+        // if setupDirectories() hasn't run yet (nativeLibDir is APK-extracted;
+        // libDir is the app-writable copy made by setupShmem()).
+        "LD_PRELOAD" to "$libDir/libandroid-shmem.so:$nativeLibDir/libandroid-shmem.so",
         // NOTE: Do NOT set PROOT_NO_SECCOMP. proot-distro does NOT set it.
         // Seccomp BPF filter provides efficient syscall interception AND
         // proper fork/clone child process tracking.
@@ -77,7 +86,7 @@ class ProcessManager(
         // Fallback: write directly into rootfs /etc/resolv.conf
         // so DNS works even if the bind-mount fails.
         //
-        // Ubuntu 22.04's /etc/resolv.conf is a symlink to
+        // Ubuntu 22.04/24.04's /etc/resolv.conf is a symlink to
         // ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
         // systemd-resolved isn't running inside proot, so DNS is completely broken.
         // File.exists() follows symlinks and returns true, skipping our write.
@@ -93,6 +102,32 @@ class ProcessManager(
             if (!rootfsResolv.exists() || rootfsResolv.length() == 0L) {
                 rootfsResolv.parentFile?.mkdirs()
                 rootfsResolv.writeText(content)
+            }
+        } catch (_: Exception) {}
+
+        // Fix /etc/nsswitch.conf on the host side before every proot call.
+        // Ubuntu 22.04 ships "mdns4_minimal [NOTFOUND=return]" and Ubuntu 24.04
+        // ships "resolve [!UNAVAIL=return]" in the hosts: line — both contact a
+        // local resolver (mDNS or systemd-resolved at 127.0.0.53) that isn't
+        // running in proot, and both return NOTFOUND which stops the lookup
+        // BEFORE reaching the real "dns" source. git clone then fails with
+        // "Could not resolve host: github.com" even though resolv.conf is correct.
+        // Overwriting the hosts: line with "files dns" fixes this permanently
+        // on the host side, surviving across every subsequent proot invocation.
+        try {
+            val nsswitch = File(rootfsDir, "etc/nsswitch.conf")
+            if (nsswitch.exists()) {
+                val lines = nsswitch.readLines()
+                val needsFix = lines.any { line ->
+                    line.trimStart().startsWith("hosts:") &&
+                    (line.contains("resolve") || line.contains("mdns"))
+                }
+                if (needsFix) {
+                    val fixed = lines.joinToString("\n") { line ->
+                        if (line.trimStart().startsWith("hosts:")) "hosts:          files dns" else line
+                    } + "\n"
+                    nsswitch.writeText(fixed)
+                }
             }
         } catch (_: Exception) {}
     }
