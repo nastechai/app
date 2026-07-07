@@ -261,7 +261,7 @@ class BootstrapService {
       ));
       // Install nastech — fork/exec works now with our Termux-matching proot.
       await NativeBridge.runInProot(
-        '$nodeRun $npmCli install -g nastech',
+        '$nodeRun $npmCli install -g nastech-termux',
         timeout: 1800,
       );
 
