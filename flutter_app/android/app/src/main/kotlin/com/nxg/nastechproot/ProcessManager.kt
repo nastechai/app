@@ -75,9 +75,21 @@ class ProcessManager(
         } catch (_: Exception) {}
 
         // Fallback: write directly into rootfs /etc/resolv.conf
-        // so DNS works even if the bind-mount fails
+        // so DNS works even if the bind-mount fails.
+        //
+        // Ubuntu 22.04's /etc/resolv.conf is a symlink to
+        // ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
+        // systemd-resolved isn't running inside proot, so DNS is completely broken.
+        // File.exists() follows symlinks and returns true, skipping our write.
+        // We must detect and delete the symlink before writing a real file.
         try {
             val rootfsResolv = File(rootfsDir, "etc/resolv.conf")
+            val resolvPath = rootfsResolv.toPath()
+            if (java.nio.file.Files.isSymbolicLink(resolvPath)) {
+                // Delete the symlink itself (not its target) so we can replace
+                // it with a real file containing working nameservers.
+                rootfsResolv.delete()
+            }
             if (!rootfsResolv.exists() || rootfsResolv.length() == 0L) {
                 rootfsResolv.parentFile?.mkdirs()
                 rootfsResolv.writeText(content)

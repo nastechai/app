@@ -260,17 +260,23 @@ class BootstrapService {
         message: 'Installing Nastech (this may take a few minutes)...',
       ));
 
-      // Fix Ubuntu's nsswitch.conf: the default "mdns4_minimal [NOTFOUND=return]"
-      // entry short-circuits glibc DNS resolution before reaching real nameservers.
-      // curl has its own resolver (c-ares) and works fine, but git uses glibc NSS
-      // and cannot resolve github.com without this fix.
+      // Fix DNS before running the installer:
+      //
+      // 1. Ubuntu 22.04's /etc/resolv.conf is a symlink →
+      //    ../run/systemd/resolve/stub-resolv.conf (nameserver 127.0.0.53).
+      //    systemd-resolved is not running in proot, so DNS is dead.
+      //    We delete the symlink and write a real file with working nameservers.
+      //    (Java-side ensureResolvConf() does the same before starting proot,
+      //    but running it here too handles any corner-cases.)
+      //
+      // 2. Ubuntu's nsswitch.conf has "mdns4_minimal [NOTFOUND=return]" which
+      //    short-circuits glibc DNS before reaching real nameservers (curl
+      //    bypasses this via c-ares, but git uses glibc NSS).
+      //
+      // 3. Then run the official nastech-agent install script.
       await NativeBridge.runInProot(
+        r"rm -f /etc/resolv.conf && printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf; "
         r"sed -i 's/mdns4_minimal \[NOTFOUND=return\] //g' /etc/nsswitch.conf; "
-        "grep hosts /etc/nsswitch.conf",
-      );
-
-      // Install nastech — fork/exec works now with our Termux-matching proot.
-      await NativeBridge.runInProot(
         'curl -fsSL https://raw.githubusercontent.com/nastechai/nastech-agent/main/scripts/install.sh | bash -s -- --skip-setup',
         timeout: 1800,
       );
