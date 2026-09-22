@@ -24,7 +24,7 @@ dependencies:
   google_fonts: ^6.1.0
   uuid: ^4.2.0
   camera: ^0.12.0+1
-  geolocator: ^12.0.0
+  geolocator: ^14.0.3
   flutter_blue_plus: ^1.32.0
   usb_serial: ^0.5.1
 
