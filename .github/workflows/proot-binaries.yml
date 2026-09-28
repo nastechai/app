@@ -153,7 +153,7 @@ jobs:
           [ "$FAILED" -eq 0 ] || exit 1
 
       - name: Upload binaries as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: proot-binaries-verified
           path: flutter_app/android/app/src/main/jniLibs/
