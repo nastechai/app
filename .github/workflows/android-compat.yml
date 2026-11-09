@@ -28,7 +28,7 @@ jobs:
     name: SDK Level Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check minSdk / targetSdk / compileSdk
         run: |
@@ -77,7 +77,7 @@ jobs:
           - abi: x86_64
             deb_arch: x86_64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install tools
         run: sudo apt-get install -y -qq curl binutils file
@@ -131,7 +131,7 @@ jobs:
     name: LD_PRELOAD Config Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify libandroid-shmem.so is referenced in ProcessManager
         run: |
@@ -163,7 +163,7 @@ jobs:
     name: Kotlin Android Source Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for hardcoded paths that should use filesDir
         run: |
