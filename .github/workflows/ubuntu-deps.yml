@@ -35,7 +35,7 @@ jobs:
           apt-get update -qq
           apt-get install -y -qq curl grep
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Extract package list from bootstrap_service.dart
         id: packages
