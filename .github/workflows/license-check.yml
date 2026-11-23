@@ -39,7 +39,7 @@ jobs:
             --out license-report.txt
 
       - name: Upload license report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-license-report
           path: license-report.txt
@@ -66,7 +66,7 @@ jobs:
         run: flutter pub deps --json > deps-report.json
 
       - name: Upload Flutter deps report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: flutter-deps-report
           path: flutter_app/deps-report.json
